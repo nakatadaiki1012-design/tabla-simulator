@@ -1,0 +1,7 @@
+{
+  "name": "TablaLab - 教育用タブラー・バーヤーン音響シミュレーター",
+  "description": "インドの伝統打楽器タブラーとバーヤーンの音響物理、演奏技法、ターラ（リズム理論）を体験的に学べる教育用シミュレーター。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

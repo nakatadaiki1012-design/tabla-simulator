@@ -1,0 +1,210 @@
+[
+  {
+    "id": "130430",
+    "name": "tas_3",
+    "bol": "na",
+    "label": "Tas (Rim 3)",
+    "file": "/samples/freesound/tas_3.mp3",
+    "size": 29847
+  },
+  {
+    "id": "130429",
+    "name": "te",
+    "bol": "te",
+    "label": "Te (Mute Main)",
+    "file": "/samples/freesound/te.mp3",
+    "size": 6367
+  },
+  {
+    "id": "130428",
+    "name": "na_sharp",
+    "bol": "na",
+    "label": "Na (Sharp Kinar)",
+    "file": "/samples/freesound/na_sharp.mp3",
+    "size": 7514
+  },
+  {
+    "id": "130427",
+    "name": "re",
+    "bol": "re",
+    "label": "Re (Index Mute)",
+    "file": "/samples/freesound/re.mp3",
+    "size": 8245
+  },
+  {
+    "id": "130426",
+    "name": "tas",
+    "bol": "na",
+    "label": "Tas (Rim Main)",
+    "file": "/samples/freesound/tas.mp3",
+    "size": 27134
+  },
+  {
+    "id": "130425",
+    "name": "tas_2",
+    "bol": "na",
+    "label": "Tas (Rim 2)",
+    "file": "/samples/freesound/tas_2.mp3",
+    "size": 34542
+  },
+  {
+    "id": "130424",
+    "name": "ke_2",
+    "bol": "ke",
+    "label": "Ke (Slap 2)",
+    "file": "/samples/freesound/ke_2.mp3",
+    "size": 2505
+  },
+  {
+    "id": "130423",
+    "name": "ke_3",
+    "bol": "ke",
+    "label": "Ke (Slap 3)",
+    "file": "/samples/freesound/ke_3.mp3",
+    "size": 3340
+  },
+  {
+    "id": "130422",
+    "name": "na-open",
+    "bol": "tin",
+    "label": "Na Open / Tin",
+    "file": "/samples/freesound/na-open.mp3",
+    "size": 35690
+  },
+  {
+    "id": "130421",
+    "name": "na",
+    "bol": "na",
+    "label": "Na (Canonical)",
+    "file": "/samples/freesound/na.mp3",
+    "size": 18159
+  },
+  {
+    "id": "130420",
+    "name": "tun_3",
+    "bol": "tun",
+    "label": "Tun (Bell 3)",
+    "file": "/samples/freesound/tun_3.mp3",
+    "size": 47381
+  },
+  {
+    "id": "130419",
+    "name": "tun_2",
+    "bol": "tun",
+    "label": "Tun (Bell 2)",
+    "file": "/samples/freesound/tun_2.mp3",
+    "size": 60425
+  },
+  {
+    "id": "130418",
+    "name": "te_2",
+    "bol": "te",
+    "label": "Te (Mute 2)",
+    "file": "/samples/freesound/te_2.mp3",
+    "size": 9758
+  },
+  {
+    "id": "130417",
+    "name": "te_ne",
+    "bol": "te",
+    "label": "Te-Ne (Roll)",
+    "file": "/samples/freesound/te_ne.mp3",
+    "size": 5063
+  },
+  {
+    "id": "130416",
+    "name": "tun",
+    "bol": "tun",
+    "label": "Tun (Canonical Bell)",
+    "file": "/samples/freesound/tun.mp3",
+    "size": 53171
+  },
+  {
+    "id": "130415",
+    "name": "te_middlefinger",
+    "bol": "te",
+    "label": "Te (Middle Finger)",
+    "file": "/samples/freesound/te_middlefinger.mp3",
+    "size": 8453
+  },
+  {
+    "id": "130414",
+    "name": "ghe_8",
+    "bol": "meend",
+    "label": "Ghe 8 (High Bend)",
+    "file": "/samples/freesound/ghe_8.mp3",
+    "size": 14923
+  },
+  {
+    "id": "130413",
+    "name": "ke",
+    "bol": "ke",
+    "label": "Ke (Canonical Slap)",
+    "file": "/samples/freesound/ke.mp3",
+    "size": 2609
+  },
+  {
+    "id": "130411",
+    "name": "ghe_4",
+    "bol": "ge",
+    "label": "Ghe 4 (Resonant Bass)",
+    "file": "/samples/freesound/ghe_4.mp3",
+    "size": 19306
+  },
+  {
+    "id": "130410",
+    "name": "ghe_5",
+    "bol": "ge",
+    "label": "Ghe 5 (Resonant Bass)",
+    "file": "/samples/freesound/ghe_5.mp3",
+    "size": 81294
+  },
+  {
+    "id": "130409",
+    "name": "ghe_6",
+    "bol": "ge",
+    "label": "Ghe 6 (Deep Bass)",
+    "file": "/samples/freesound/ghe_6.mp3",
+    "size": 81450
+  },
+  {
+    "id": "130408",
+    "name": "ghe_7",
+    "bol": "meend",
+    "label": "Ghe 7 (Meend Slide)",
+    "file": "/samples/freesound/ghe_7.mp3",
+    "size": 49723
+  },
+  {
+    "id": "130407",
+    "name": "dhec",
+    "bol": "dha",
+    "label": "Dha / Dhec (Composite)",
+    "file": "/samples/freesound/dhec.mp3",
+    "size": 9133
+  },
+  {
+    "id": "130406",
+    "name": "ghe",
+    "bol": "ge",
+    "label": "Ghe (Canonical Bass)",
+    "file": "/samples/freesound/ghe.mp3",
+    "size": 15028
+  },
+  {
+    "id": "130405",
+    "name": "ghe_2",
+    "bol": "ge",
+    "label": "Ghe 2 (Bass Alt)",
+    "file": "/samples/freesound/ghe_2.mp3",
+    "size": 61100
+  },
+  {
+    "id": "130404",
+    "name": "ghe_3",
+    "bol": "ge",
+    "label": "Ghe 3 (Bass Alt 2)",
+    "file": "/samples/freesound/ghe_3.mp3",
+    "size": 55829
+  }
+]
