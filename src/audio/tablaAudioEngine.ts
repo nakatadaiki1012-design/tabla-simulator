@@ -176,11 +176,12 @@ class TablaAudioEngine {
   }
 
   public ensureContext(): boolean {
-    if (!this.ctx) return this.init();
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+    // 初回もここで音源を読み込む（以前は初回だけ読み込まれず合成音のままだった）
+    if (!this.ctx && !this.init()) return false;
+    if (this.ctx!.state === 'suspended') {
+      this.ctx!.resume();
     }
-    if (this.sampleBuffers.size === 0) {
+    if (this.sampleBuffers.size === 0 && !this.isFreesoundLoading) {
       this.loadSoundBank(this.currentPreset);
     }
     return true;
@@ -827,7 +828,7 @@ class TablaAudioEngine {
     this.isFreesoundLoading = true;
     try {
       if (this.freesoundManifest.length === 0) {
-        const res = await fetch('/samples/freesound/manifest.json');
+        const res = await fetch(`${import.meta.env.BASE_URL}samples/freesound/manifest.json`);
         this.freesoundManifest = await res.json();
       }
 
@@ -835,7 +836,8 @@ class TablaAudioEngine {
         this.freesoundManifest.map(async (item) => {
           if (!this.rawFreesoundBuffers.has(item.name) && this.ctx) {
             try {
-              const resp = await fetch(item.file);
+              // 公開先がサブフォルダ（GitHub Pages など）でも読めるよう、先頭の / を取り除いて BASE_URL からの相対パスにする
+              const resp = await fetch(`${import.meta.env.BASE_URL}${item.file.replace(/^\//, '')}`);
               const arrayBuf = await resp.arrayBuffer();
               const audioBuf = await this.ctx.decodeAudioData(arrayBuf);
               this.rawFreesoundBuffers.set(item.name, audioBuf);
@@ -1125,6 +1127,8 @@ class TablaAudioEngine {
   }
 
   public playBol(bol: BolKey, customBend?: number) {
+    // どの画面から叩いても、音の準備（初回の録音読み込みを含む）を必ず行う
+    if (!this.ensureContext()) return;
     // Mode 1: Pure Studio Sampler
     if (this.engineMode === 'sampler') {
       if (this.sampleBuffers.has(bol)) {
