@@ -75,20 +75,19 @@ class TablaAudioEngine {
 
       // Master Compressor (Limiter) for acoustic drum punch without clipping
       this.compressor = this.ctx.createDynamicsCompressor();
-      this.compressor.threshold.setValueAtTime(-3, this.ctx.currentTime);
-      this.compressor.knee.setValueAtTime(6, this.ctx.currentTime);
-      this.compressor.ratio.setValueAtTime(5, this.ctx.currentTime);
-      this.compressor.attack.setValueAtTime(0.002, this.ctx.currentTime);
-      this.compressor.release.setValueAtTime(0.12, this.ctx.currentTime);
+      // 最終段のリミッター：音が重なっても 1.0 を超えて割れない（ジリジリ防止）
+      this.compressor.threshold.setValueAtTime(-8, this.ctx.currentTime);
+      this.compressor.knee.setValueAtTime(4, this.ctx.currentTime);
+      this.compressor.ratio.setValueAtTime(16, this.ctx.currentTime);
+      this.compressor.attack.setValueAtTime(0.001, this.ctx.currentTime);
+      this.compressor.release.setValueAtTime(0.15, this.ctx.currentTime);
 
       // Master Gain
       this.masterGain = this.ctx.createGain();
       this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : this.volume, this.ctx.currentTime);
 
       // Soft non-linear WaveShaper simulating Syahi micro-fissure friction
-      this.waveShaper = this.ctx.createWaveShaper();
-      this.waveShaper.curve = this.makeDistortionCurve(1.8);
-      this.waveShaper.oversample = '2x';
+      this.waveShaper = null; // 全体出力には使わない（上の説明参照）
 
       // Reverb / Room ambience bus
       this.dryGain = this.ctx.createGain();
@@ -104,13 +103,14 @@ class TablaAudioEngine {
       this.analyser.fftSize = 2048;
       this.analyser.smoothingTimeConstant = 0.72;
 
-      // Routing: Master -> WaveShaper -> (Dry & Convolver) -> Compressor -> Analyser -> Dest
-      this.masterGain.connect(this.waveShaper);
-      this.waveShaper.connect(this.dryGain);
+      // Routing: Master -> (Dry & Convolver) -> Compressor(Limiter) -> Analyser -> Dest
+      // ※以前は全体に歪み（WaveShaper）を通していたが、音が重なると入力が 1.0 を超えて
+      //   ハードクリップし「ジリジリ」の原因になっていたため、全体出力からは外した。
+      this.masterGain.connect(this.dryGain);
       this.dryGain.connect(this.compressor);
 
       if (this.convolver) {
-        this.waveShaper.connect(this.convolver);
+        this.masterGain.connect(this.convolver);
         this.convolver.connect(this.wetGain);
         this.wetGain.connect(this.compressor);
       }
@@ -665,6 +665,11 @@ class TablaAudioEngine {
     style: 'slide' | 'wave' | 'jhatka' = 'slide'
   ) {
     if (!this.ensureContext() || !this.ctx || !this.masterGain) return;
+    // 録音モードで「押し上げ」の実音があればそれを使う
+    if (this.engineMode === 'sampler' && this.currentPreset === 'freesound' && this.bolRoundRobinBanks.has('meend')) {
+      this.playSample('meend', intensity, bendAmount);
+      return;
+    }
     const now = this.ctx.currentTime;
     const startFreq = Math.max(62, this.bayanBaseFreq);
     const peakFreq = startFreq * Math.max(1.15, Math.min(2.1, bendAmount));
@@ -853,15 +858,19 @@ class TablaAudioEngine {
       const getBuffers = (names: string[]) =>
         names.map((n) => this.rawFreesoundBuffers.get(n)).filter((b): b is AudioBuffer => !!b);
 
-      const naBuffers = getBuffers(['na', 'na_sharp', 'tas', 'tas_2', 'tas_3']);
+      // 1つの打ち方には「同じ性格の録音」だけを入れる（混ぜると毎回音色・音程がバラバラになる）
+      const naBuffers = getBuffers(['na', 'na_sharp']);
       const tinBuffers = getBuffers(['na-open']);
       const tunBuffers = getBuffers(['tun', 'tun_2', 'tun_3']);
       const teBuffers = getBuffers(['te', 'te_2', 'te_middlefinger', 'te_ne']);
       const reBuffers = getBuffers(['re']);
-      const geBuffers = getBuffers(['ghe', 'ghe_2', 'ghe_3', 'ghe_4', 'ghe_5', 'ghe_6']);
-      const meendBuffers = getBuffers(['ghe_7', 'ghe_8']);
+      // ghe_5/6：音程が安定して長く響く開放音。ghe_4：音程が上がる録音（ミーンド）。
+      // ghe/ghe_2/3/7 は音程が下がる・短いなど性格が違うので使わない
+      const geBuffers = getBuffers(['ghe_5', 'ghe_6']);
+      const meendBuffers = getBuffers(['ghe_4']);
       const keBuffers = getBuffers(['ke', 'ke_2', 'ke_3']);
-      const dhaBuffers = getBuffers(['dhec']);
+      // dhec は響かない短い音で「ダー」ではないため使わない（ダー＝ナー＋ゲーを重ねて鳴らす）
+      const dhaBuffers: AudioBuffer[] = [];
 
       if (naBuffers.length) this.bolRoundRobinBanks.set('na', naBuffers);
       if (tinBuffers.length) this.bolRoundRobinBanks.set('tin', tinBuffers);
@@ -1062,7 +1071,8 @@ class TablaAudioEngine {
     bol: BolKey,
     intensity: number = 1.0,
     customBend?: number,
-    transientOnly: boolean = false
+    transientOnly: boolean = false,
+    when?: number
   ): boolean {
     if (!this.ensureContext() || !this.ctx || !this.masterGain) return false;
 
@@ -1095,21 +1105,41 @@ class TablaAudioEngine {
     const source = this.ctx.createBufferSource();
     source.buffer = buffer;
 
-    // Pitch scaling for Dayan tuning (Base D4 = 293.66 Hz)
+    const now = Math.max(when ?? 0, this.ctx.currentTime);
+
+    // Pitch scaling for Dayan tuning.
+    // 提供実音（Freesound）の右の太鼓は実測で約315Hz。合成バンクは D4=293.66Hz 基準。
     const isDayan = bol === 'na' || bol === 'tin' || bol === 'tun' || bol === 'te' || bol === 're';
+    const sampleSa = this.currentPreset === 'freesound' && this.bolRoundRobinBanks.size ? 315 : 293.66;
     if (isDayan) {
-      const pitchRatio = (this.rootFreq * this.skinTension) / 293.66;
-      source.playbackRate.setValueAtTime(pitchRatio, this.ctx.currentTime);
+      const pitchRatio = (this.rootFreq * this.skinTension) / sampleSa;
+      source.playbackRate.setValueAtTime(pitchRatio, now);
     } else if (bol === 'meend') {
-      const startRate = 1.0;
-      const peakRate = Math.max(1.15, Math.min(2.1, customBend || 1.6));
-      source.playbackRate.setValueAtTime(startRate, this.ctx.currentTime);
-      source.playbackRate.exponentialRampToValueAtTime(peakRate, this.ctx.currentTime + 0.22);
-      source.playbackRate.exponentialRampToValueAtTime(startRate * 1.05, this.ctx.currentTime + 0.85);
+      // 録音（ghe_4）自体が「押し上げ」で音程が上がるので、上乗せは控えめに
+      const realMeend = this.currentPreset === 'freesound' && this.bolRoundRobinBanks.has('meend');
+      const bend = Math.max(1.15, Math.min(2.1, customBend || 1.6));
+      const peakRate = realMeend ? 1 + (bend - 1) * 0.25 : bend;
+      source.playbackRate.setValueAtTime(1.0, now);
+      source.playbackRate.exponentialRampToValueAtTime(peakRate, now + 0.22);
+      if (!realMeend) source.playbackRate.exponentialRampToValueAtTime(1.05, now + 0.85);
     }
 
     const gain = this.ctx.createGain();
-    const now = this.ctx.currentTime;
+
+    // 同じ太鼓を続けて叩くと、前の響きは手で止められる（響きの重なり・音割れを防ぐ）
+    const drum: 'dayan' | 'bayan' = isDayan ? 'dayan' : 'bayan';
+    const closed = bol === 'te' || bol === 're' || bol === 'ke';
+    if (!transientOnly) {
+      const prev = this.ringingVoices[drum];
+      if (prev) {
+        try {
+          prev.gain.gain.cancelScheduledValues(now);
+          prev.gain.gain.setTargetAtTime(0, now, closed ? 0.012 : 0.04);
+          prev.source.stop(now + 0.4);
+        } catch { /* already stopped */ }
+      }
+      this.ringingVoices[drum] = { source, gain };
+    }
 
     if (transientOnly) {
       // In Hybrid mode: sample gives the crisp initial leather/fingertip bite (first 45ms)
@@ -1124,6 +1154,44 @@ class TablaAudioEngine {
 
     source.start(now);
     return true;
+  }
+
+  private ringingVoices: { dayan?: { source: AudioBufferSourceNode; gain: GainNode }; bayan?: { source: AudioBufferSourceNode; gain: GainNode } } = {};
+
+  /** 録音が読み込み済みか（アンサンブルなど時刻指定の演奏で使う） */
+  public get samplesReady(): boolean {
+    return this.currentPreset !== 'freesound' || this.bolRoundRobinBanks.size > 0;
+  }
+
+  /** 音源の準備が終わるまで待つ */
+  public async ready(): Promise<void> {
+    this.ensureContext();
+    for (let i = 0; i < 100 && (!this.samplesReady || this.isFreesoundLoading); i++) {
+      if (!this.isFreesoundLoading && !this.samplesReady) this.loadSoundBank(this.currentPreset);
+      await new Promise((r) => setTimeout(r, 50));
+    }
+  }
+
+  /** 他の楽器（シタールなど）を同じ出力・リバーブに混ぜるための入口 */
+  public getContext(): AudioContext | null { this.ensureContext(); return this.ctx; }
+  public getInput(): AudioNode | null { this.ensureContext(); return this.masterGain; }
+
+  /**
+   * 指定した時刻に正確にボルを鳴らす（アンサンブル用・録音を使用）
+   */
+  public scheduleBol(bol: BolKey, when: number, intensity: number = 1.0) {
+    if (!this.ensureContext()) return;
+    const v = intensity * (0.94 + Math.random() * 0.12);
+    switch (bol) {
+      case 'dha': this.playSample('na', v * 0.95, undefined, false, when); this.playSample('ge', v * 0.95, undefined, false, when); break;
+      case 'dhin': this.playSample('tin', v * 0.95, undefined, false, when); this.playSample('ge', v * 0.95, undefined, false, when); break;
+      case 'ti_re_ki_ta': {
+        const seq: BolKey[] = ['te', 're', 'ke', 'te'];
+        seq.forEach((b, i) => this.playSample(b, v * (i === 0 ? 1 : 0.85), undefined, false, when + i * 0.07));
+        break;
+      }
+      default: this.playSample(bol, v, undefined, false, when);
+    }
   }
 
   public playBol(bol: BolKey, customBend?: number) {
@@ -1143,6 +1211,11 @@ class TablaAudioEngine {
       if (bol === 'dhin' && this.sampleBuffers.has('tin') && this.sampleBuffers.has('ge')) {
         this.playSample('tin', 0.95);
         this.playSample('ge', 0.95);
+        return;
+      }
+      // ティラキタも録音（テ・ラ・ケ・テ）で鳴らす
+      if (bol === 'ti_re_ki_ta' && this.sampleBuffers.has('te') && this.sampleBuffers.has('ke')) {
+        this.scheduleBol('ti_re_ki_ta', this.ctx!.currentTime);
         return;
       }
     }
