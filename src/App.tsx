@@ -127,14 +127,6 @@ export default function App() {
             >
               学習・レッスン
             </button>
-            <span aria-hidden="true">·</span>
-            <a
-              href="/tabla-simulator-project.zip"
-              download="tabla-simulator-project.zip"
-              className="text-amber-400 hover:text-amber-300 transition-colors font-semibold flex items-center gap-1"
-            >
-              <span>📦 ZIP一括ダウンロード</span>
-            </a>
           </div>
         </div>
       </footer>

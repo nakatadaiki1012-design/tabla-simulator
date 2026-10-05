@@ -1,5 +1,5 @@
 import React from 'react';
-import { HelpCircle, Download } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
 export type TabType =
   | 'simulator'
@@ -72,17 +72,6 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenKe
 
       {/* Zone 3: 1-2 primary actions */}
       <div className="flex items-center gap-2.5">
-        <a
-          href="/tabla-simulator-project.zip"
-          download="tabla-simulator-project.zip"
-          className="px-3 py-1.5 text-xs font-semibold text-amber-300 bg-amber-950/80 border border-amber-700/80 rounded-lg hover:bg-amber-900 transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-sm cursor-pointer"
-          title="プロジェクト全ソースコード・音源データをZIPで一括ダウンロード"
-        >
-          <Download className="w-3.5 h-3.5 text-amber-400" />
-          <span className="hidden sm:inline">全コードZIP保存</span>
-          <span className="sm:hidden">ZIP保存</span>
-        </a>
-
         <button
           onClick={onOpenKeyGuide}
           className="px-3 py-1.5 text-xs font-semibold text-stone-200 bg-stone-900 border border-stone-800 rounded-lg hover:bg-stone-800 transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-sm"
