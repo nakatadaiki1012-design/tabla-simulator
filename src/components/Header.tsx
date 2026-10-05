@@ -4,6 +4,7 @@ import { HelpCircle } from 'lucide-react';
 export type TabType =
   | 'simulator'
   | 'autoplay'
+  | 'sitar'
   | 'taiko'
   | 'learning'
   | 'theory'
@@ -57,6 +58,16 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenKe
           }`}
         >
           巨匠の自動演奏
+        </button>
+        <button
+          onClick={() => onTabChange('sitar')}
+          className={`hover:text-stone-100 transition-colors whitespace-nowrap ${
+            activeTab === 'sitar'
+              ? 'text-amber-400 font-bold underline underline-offset-8 decoration-2'
+              : ''
+          }`}
+        >
+          シタール＆アンサンブル
         </button>
         <button
           onClick={() => onTabChange('learning')}

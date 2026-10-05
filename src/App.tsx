@@ -7,6 +7,7 @@ import React, { useState, useCallback } from 'react';
 import { Header, TabType } from './components/Header';
 import { TablaVisualizer } from './components/TablaVisualizer';
 import { AutoPlayer } from './components/AutoPlayer';
+import { SitarPanel } from './components/SitarPanel';
 import { LearningHub } from './components/LearningHub';
 import { KeyboardGuideModal } from './components/KeyboardGuideModal';
 import { BolKey } from './types/tabla';
@@ -46,6 +47,7 @@ export default function App() {
           {[
             { id: 'simulator', label: '🪘 演奏・体験' },
             { id: 'autoplay', label: '🎵 巨匠の自動演奏' },
+            { id: 'sitar', label: '🎸 シタール＆合奏' },
             { id: 'learning', label: '📚 学習・レッスン' },
           ].map((item) => {
             const isSelected = item.id === 'learning' ? isLearningTab : activeTab === item.id;
@@ -76,6 +78,13 @@ export default function App() {
         {activeTab === 'autoplay' && (
           <div className="flex flex-col gap-6 animate-fade-in">
             <AutoPlayer onBolPlayed={handleBolTriggered} />
+          </div>
+        )}
+
+        {/* TAB: シタール＆アンサンブル */}
+        {activeTab === 'sitar' && (
+          <div className="flex flex-col gap-6 animate-fade-in">
+            <SitarPanel />
           </div>
         )}
 
