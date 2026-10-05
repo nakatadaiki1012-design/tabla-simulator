@@ -12,10 +12,11 @@ const KEYS = [
 ];
 
 // 棹（フレット）の描画用：実物のように高音ほどフレットが詰まる配置（見やすく少しゆるめ）
-const NUT = 30, SY = 112, K = 22;
+const NUT = 30, SY = 120, K = 22; // SY: 主弦の高さ
 const LEN = 955 / (1 - Math.pow(2, -(24 - OPEN_STRING) / K));
 const xOf = (semi: number) => NUT + LEN * (1 - Math.pow(2, -(semi - OPEN_STRING) / K));
 
+const fingerX = (semi: number) => (semi <= OPEN_STRING ? NUT : xOf(semi));
 const markColor = (m: string) => (m.startsWith('X') ? 'border-red-500 text-red-400' : m === '0' ? 'border-sky-500 text-sky-400' : m ? 'border-amber-500 text-amber-400' : 'border-stone-700 text-stone-500');
 
 export const SitarPanel: React.FC = () => {
@@ -45,7 +46,12 @@ export const SitarPanel: React.FC = () => {
   const bpmRef = useRef(bpm); bpmRef.current = bpm;
   const taalRef = useRef(taal); taalRef.current = taal;
   const strokeRef = useRef<SitarStroke>('Ra');
-  const manual = useRef<{ semi: number; y0: number; x: number } | null>(null);
+  const manual = useRef<{ semi: number; cur: number; y0: number; x: number } | null>(null);
+  // 弦の振動アニメーション（押さえた位置から駒まで、だんだん小さく揺れる）
+  const vib = useRef({ amp: 0, t0: 0, fx: NUT });
+  const stringRef = useRef<SVGPathElement>(null);
+  const fingerRef = useRef<SVGCircleElement>(null);
+  const bendRef = useRef(0);
   const svgRef = useRef<SVGSVGElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -84,6 +90,25 @@ export const SitarPanel: React.FC = () => {
       window.setTimeout(() => setGlowTaraf((s) => { const n = new Set(s); n.delete(e.index); return n; }), 900);
     }
   }), []);
+
+  useEffect(() => sitarAudio.on((e) => {
+    if (e.type === 'note') vib.current = { amp: 4.5, t0: performance.now(), fx: fingerX(e.semi) };
+  }), []);
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      const v = vib.current, el = stringRef.current, fg = fingerRef.current;
+      if (el) {
+        const age = (performance.now() - v.t0) / 1000, amp = v.amp * Math.exp(-age * 3.2), dy = bendRef.current;
+        const wob = amp * Math.sin(age * 90), fx = v.fx, mid = (fx + 1000) / 2;
+        el.setAttribute('d', `M ${NUT} ${SY} L ${fx} ${SY - dy} Q ${mid} ${SY - dy * 0.55 + wob} 1000 ${SY - dy * 0.12}`);
+        if (fg) { fg.setAttribute('cx', String(fx - 9)); fg.setAttribute('cy', String(SY - dy)); fg.setAttribute('opacity', fx > NUT + 1 && age < 2.5 ? String(Math.max(0, 0.9 - age * 0.3)) : '0'); }
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   // 画面を離れたら止める
   useEffect(() => () => { ensemble.stop(); sitarAudio.stopTanpura(); }, []);
@@ -145,26 +170,36 @@ export const SitarPanel: React.FC = () => {
     pt.x = ev.clientX; pt.y = ev.clientY;
     return pt.matrixTransform(svg.getScreenCTM()!.inverse());
   };
+  const zoneAt = (x: number) => {
+    if (x < NUT + 14) return OPEN_STRING;
+    let best = OPEN_STRING;
+    ladder.forEach((z, k) => { if (x > (k ? xOf(ladder[k - 1]) : NUT + 14)) best = z; });
+    return best;
+  };
   const onFretDown = (semi: number) => (ev: React.PointerEvent) => {
     ev.preventDefault();
     const p = svgPoint(ev);
     strike(semi);
-    manual.current = { semi, y0: p.y, x: p.x };
+    manual.current = { semi, cur: semi, y0: p.y, x: p.x };
     setBend({ x: p.x, dy: 0 });
     (ev.currentTarget as Element).setPointerCapture?.(ev.pointerId);
   };
   const onMove = (ev: React.PointerEvent) => {
-    if (!manual.current) return;
+    const m = manual.current; if (!m) return;
     const p = svgPoint(ev);
-    const dy = Math.max(0, Math.min(60, manual.current.y0 - p.y)), st = dy / 11;
-    sitarAudio.bend(st);
-    setBend({ x: manual.current.x, dy });
-    setCurNote(manual.current.semi + st);
-    setMeendText(st > 0.1 ? `ミーンド：+${st.toFixed(1)}半音（${swaraName(manual.current.semi).rom} → ${swaraName(Math.round(manual.current.semi + st)).rom}）` : '');
+    // 横に動かすと、弾き直さずに隣のフレットへ音が滑る
+    const z = zoneAt(p.x);
+    if (z !== m.cur) { m.cur = z; m.x = p.x; }
+    const dy = Math.max(0, Math.min(60, m.y0 - p.y)), st = dy / 11;
+    sitarAudio.bend(m.cur - m.semi + st);
+    vib.current.fx = fingerX(m.cur);
+    setBend({ x: fingerX(m.cur), dy });
+    setCurNote(m.cur + st);
+    setMeendText(st > 0.1 ? `ミーンド：+${st.toFixed(1)}半音（${swaraName(m.cur).rom} → ${swaraName(Math.round(m.cur + st)).rom}）` : m.cur !== m.semi ? `フレットに沿って滑らせています（${swaraName(m.semi).rom} → ${swaraName(m.cur).rom}）` : '');
   };
   const onUp = () => {
-    if (!manual.current) return;
-    sitarAudio.bend(0, true); manual.current = null; setBend(null); setMeendText('');
+    const m = manual.current; if (!m) return;
+    sitarAudio.bend(m.cur - m.semi, true); manual.current = null; setBend(null); setMeendText('');
   };
 
   // アンサンブル
@@ -191,6 +226,7 @@ export const SitarPanel: React.FC = () => {
     if (sitarAudio.tanpuraOn) { sitarAudio.stopTanpura(); setTanpura(false); } else { sitarAudio.startTanpura(); setTanpura(true); }
   };
 
+  bendRef.current = bend ? bend.dy * 0.35 : 0; // 見た目：実物のように押さえた指のあたりだけ横に引かれる
   const curName = curNote != null ? swaraName(Math.round(curNote)) : null;
   const sec = FLOW.find((f) => f.id === section);
   const marks = beatMarks(perfTaal);
@@ -224,42 +260,82 @@ export const SitarPanel: React.FC = () => {
 
       {/* 棹 */}
       <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-3 sm:p-4">
+        <SitarOverview playing={curNote != null} />
         <div className="sm:hidden text-[11px] text-stone-500 mb-1">← 棹は横にスクロールできます →</div>
         <div ref={scrollRef} className="overflow-x-auto rounded-xl">
-        <svg ref={svgRef} viewBox="0 0 1000 210" className="w-full min-w-[880px] sm:min-w-0 h-auto select-none rounded-xl" style={{ touchAction: 'pan-x', background: 'linear-gradient(180deg,#3b2414,#24150b)' }}
+        <svg ref={svgRef} viewBox="0 0 1000 236" className="w-full min-w-[880px] sm:min-w-0 h-auto select-none rounded-xl" style={{ touchAction: 'pan-x', background: 'radial-gradient(ellipse at 50% 40%,#2a1a10,#120a06)' }}
           onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-          <rect x={NUT - 6} y={60} width={1000} height={110} fill="#5a3518" />
-          <rect x={NUT - 10} y={56} width={8} height={118} fill="#e8dcc0" />
+          <defs>
+            <linearGradient id="neckWood" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#4a2410" /><stop offset=".18" stopColor="#6e3a1a" /><stop offset=".5" stopColor="#5a2e14" /><stop offset=".85" stopColor="#3e1d0b" /><stop offset="1" stopColor="#2a1206" />
+            </linearGradient>
+            <linearGradient id="fretMetal" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stopColor="#7a5a2a" /><stop offset=".45" stopColor="#fff2c8" /><stop offset=".6" stopColor="#d9b46a" /><stop offset="1" stopColor="#6b4a1e" />
+            </linearGradient>
+            <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#ffffff" /><stop offset=".5" stopColor="#c9ccd2" /><stop offset="1" stopColor="#6c6f76" />
+            </linearGradient>
+            <linearGradient id="bone" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#f6efdc" /><stop offset="1" stopColor="#cfc2a0" /></linearGradient>
+            <pattern id="inlay" width="26" height="10" patternUnits="userSpaceOnUse">
+              <rect width="26" height="10" fill="#2a1408" />
+              <path d="M0 5 L6.5 1 L13 5 L6.5 9 Z M13 5 L19.5 1 L26 5 L19.5 9 Z" fill="none" stroke="#e9dcc0" strokeWidth=".9" />
+              <circle cx="6.5" cy="5" r="1.3" fill="#e9dcc0" /><circle cx="19.5" cy="5" r="1.3" fill="#e9dcc0" />
+            </pattern>
+            <filter id="glowF" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" /></filter>
+          </defs>
+          {/* 棹（ダンド）：木目と、縁の骨の象嵌 */}
+          <rect x={NUT - 6} y={56} width={1010} height={128} rx={6} fill="url(#neckWood)" />
+          {[70, 96, 133, 158, 171].map((y, k) => (
+            <path key={k} d={`M ${NUT} ${y} C 250 ${y - 3 + k}, 520 ${y + 4 - k}, 1000 ${y - 1}`} stroke="#2a1206" strokeOpacity={0.35} strokeWidth={k % 2 ? 0.7 : 1.2} fill="none" pointerEvents="none" />
+          ))}
+          <rect x={NUT - 6} y={52} width={1010} height={10} fill="url(#inlay)" pointerEvents="none" />
+          <rect x={NUT - 6} y={178} width={1010} height={10} fill="url(#inlay)" pointerEvents="none" />
+          {/* 共鳴弦（タラフ）：フレットの下を通る細い弦。共鳴すると光る */}
+          {taraf.map((_, i) => {
+            const y = 142 + i * 2.6, on = glowTaraf.has(i);
+            return <g key={i} pointerEvents="none">
+              {on && <line x1={NUT} y1={y} x2={1000} y2={y} stroke="#5eead4" strokeWidth={3} opacity={0.7} filter="url(#glowF)" />}
+              <line x1={NUT} y1={y} x2={1000} y2={y} stroke={on ? '#99f6e4' : '#b8a27a'} strokeWidth={on ? 1 : 0.55} opacity={on ? 1 : 0.55} />
+            </g>;
+          })}
+          {/* フレット（パルダー）：弓なりの金属を糸で結びつけてある。押せる範囲＝フレットの手前 */}
           {zones.map((z) => {
             const isSa = (((z.semi % 12) + 12) % 12) === 0;
             const on = curNote != null && Math.round(curNote) === z.semi;
             const sw = swaraName(z.semi), cx = (z.x0 + z.x1) / 2 + 2, narrow = z.x1 - z.x0 < 44;
             return (
               <g key={z.semi} onPointerDown={onFretDown(z.semi)} className="cursor-pointer">
-                <rect x={z.x0} y={60} width={Math.max(6, z.x1 - z.x0)} height={110} fill={on ? 'rgba(245,158,11,.35)' : 'transparent'} />
+                <rect x={z.x0} y={56} width={Math.max(6, z.x1 - z.x0)} height={128} fill={on ? 'rgba(245,158,11,.16)' : 'transparent'} />
                 {z.semi !== OPEN_STRING && (
-                  <>
-                    <rect x={z.x1 - 2.5} y={72} width={5} height={86} rx={2} fill={isSa ? '#ffd27a' : '#d9d2c4'} pointerEvents="none" />
-                    <text x={cx} y={194} textAnchor="middle" fontSize={narrow ? 11 : 13} fontWeight={800} fill={isSa ? '#ff9b8c' : '#f3e6cf'} pointerEvents="none">{sw.rom}</text>
-                    <text x={cx} y={207} textAnchor="middle" fontSize={9} fill="#cdb89a" pointerEvents="none">{sw.kana}</text>
-                    {keyFor[z.semi] && <text x={cx} y={52} textAnchor="middle" fontSize={10} fill="#7fd6c8" pointerEvents="none" className="hidden sm:block">{keyFor[z.semi]}</text>}
-                  </>
+                  <g pointerEvents="none">
+                    {on && <path d={`M ${z.x1} 64 Q ${z.x1 - 6} 120 ${z.x1} 176`} stroke="#fbbf24" strokeWidth={7} fill="none" opacity={0.55} filter="url(#glowF)" />}
+                    <path d={`M ${z.x1 + 2.5} 66 Q ${z.x1 - 3.5} 120 ${z.x1 + 2.5} 174`} stroke="#120800" strokeOpacity={0.55} strokeWidth={4} fill="none" />
+                    <path d={`M ${z.x1} 64 Q ${z.x1 - 6} 120 ${z.x1} 176`} stroke="url(#fretMetal)" strokeWidth={isSa ? 4.4 : 3.6} fill="none" strokeLinecap="round" />
+                    <ellipse cx={z.x1} cy={63} rx={3.2} ry={2} fill="#d8c9a3" /><ellipse cx={z.x1} cy={177} rx={3.2} ry={2} fill="#d8c9a3" />
+                    <rect x={cx - 17} y={192} width={34} height={30} rx={5} fill={on ? '#78350f' : 'rgba(0,0,0,.25)'} />
+                    <text x={cx} y={206} textAnchor="middle" fontSize={narrow ? 10.5 : 12.5} fontWeight={800} fill={isSa ? '#ff9b8c' : '#f3e6cf'}>{sw.rom}</text>
+                    <text x={cx} y={218} textAnchor="middle" fontSize={8.5} fill="#cdb89a">{sw.kana}</text>
+                    {keyFor[z.semi] && <text x={cx} y={44} textAnchor="middle" fontSize={10} fill="#7fd6c8" className="hidden sm:block">{keyFor[z.semi]}</text>}
+                  </g>
                 )}
               </g>
             );
           })}
+          {/* 上駒（骨） */}
+          <rect x={NUT - 12} y={56} width={10} height={128} rx={2} fill="url(#bone)" pointerEvents="none" />
           {/* チカリ弦 */}
-          <g onPointerDown={(e) => { e.preventDefault(); boot(); sitarAudio.chikari(undefined, 0.9); }} className="cursor-pointer" opacity={chikFlash ? 0.3 : 1}>
-            <rect x={NUT} y={62} width={1000} height={22} fill="transparent" />
-            <line x1={NUT} y1={70} x2={1000} y2={70} stroke="#cfc7b8" strokeWidth={1} />
-            <line x1={NUT} y1={78} x2={1000} y2={78} stroke="#cfc7b8" strokeWidth={1} />
-            <text x={960} y={76} textAnchor="end" fontSize={9} fill="#cdb89a">チカリ弦（タップ）</text>
+          <g onPointerDown={(e) => { e.preventDefault(); boot(); sitarAudio.chikari(undefined, 0.9); }} className="cursor-pointer" opacity={chikFlash ? 0.35 : 1}>
+            <rect x={NUT} y={70} width={1000} height={24} fill="transparent" />
+            <line x1={NUT} y1={78} x2={1000} y2={78} stroke="url(#steel)" strokeWidth={1} />
+            <line x1={NUT} y1={86} x2={1000} y2={86} stroke="url(#steel)" strokeWidth={1} />
+            <text x={990} y={83} textAnchor="end" fontSize={8.5} fill="#e7d9bd" opacity={0.8}>チカリ弦（タップ）</text>
           </g>
-          {/* 主弦（ミーンドで横に引かれる） */}
-          <path d={bend && bend.dy ? `M ${NUT} ${SY} L ${bend.x} ${SY - bend.dy} L 1000 ${SY - bend.dy * 0.15}` : `M ${NUT} ${SY} L 1000 ${SY}`} stroke="#f2ead8" strokeWidth={2.2} fill="none" pointerEvents="none" />
-          <text x={NUT + 4} y={SY - 8} fontSize={9} fill="#cdb89a" pointerEvents="none">主弦（開放＝低いマ）</text>
-          <line x1={NUT} y1={SY + 18} x2={1000} y2={SY + 18} stroke="#9b8c75" strokeWidth={1} pointerEvents="none" />
-          <line x1={NUT} y1={SY + 28} x2={1000} y2={SY + 28} stroke="#9b8c75" strokeWidth={1.4} pointerEvents="none" />
+          {/* ジョード弦（主弦の隣） */}
+          <line x1={NUT} y1={SY + 14} x2={1000} y2={SY + 14} stroke="url(#steel)" strokeWidth={1.4} pointerEvents="none" opacity={0.85} />
+          {/* 主弦（バージ・タール）：弾くと揺れ、ミーンドで横に引かれる */}
+          <path ref={stringRef} d={`M ${NUT} ${SY} L 1000 ${SY}`} stroke="#f4f4f6" strokeWidth={2.4} fill="none" pointerEvents="none" />
+          <circle ref={fingerRef} cx={NUT} cy={SY} r={8} fill="#e0a77e" stroke="#7c4a2c" strokeWidth={1.5} opacity={0} pointerEvents="none" />
+          <text x={NUT + 4} y={SY - 7} fontSize={8.5} fill="#e7d9bd" opacity={0.75} pointerEvents="none">主弦（開放＝低いマ）</text>
         </svg>
         </div>
         <div className="text-xs text-teal-300 min-h-[1.2em] mt-1">{meendText}</div>
@@ -372,3 +448,29 @@ export const SitarPanel: React.FC = () => {
     </div>
   );
 };
+
+/** シタール全体の姿（上から見た図）。下の棹がどの部分かを示す */
+const SitarOverview: React.FC<{ playing: boolean }> = ({ playing }) => (
+  <svg viewBox="0 0 1000 120" className="w-full h-auto mb-2 select-none pointer-events-none" aria-label="シタール全体の図">
+    <defs>
+      <radialGradient id="gourd" cx="45%" cy="40%" r="65%"><stop offset="0" stopColor="#c27a3e" /><stop offset=".6" stopColor="#7c3f17" /><stop offset="1" stopColor="#3a1a08" /></radialGradient>
+      <linearGradient id="neckO" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#7a4420" /><stop offset="1" stopColor="#3a1c0a" /></linearGradient>
+    </defs>
+    <ellipse cx={58} cy={70} rx={34} ry={30} fill="url(#gourd)" opacity={0.9} />
+    <rect x={70} y={56} width={700} height={22} rx={6} fill="url(#neckO)" />
+    <rect x={70} y={54} width={700} height={3} fill="#e9dcc0" opacity={0.7} /><rect x={70} y={77} width={700} height={3} fill="#e9dcc0" opacity={0.7} />
+    {[110, 150, 190, 230, 270, 330, 390].map((x, i) => <g key={i}><rect x={x} y={i % 2 ? 80 : 36} width={6} height={22} rx={2} fill="#d9c49a" /><circle cx={x + 3} cy={i % 2 ? 104 : 36} r={5} fill="#e9dcc0" /></g>)}
+    {Array.from({ length: 19 }, (_, i) => { const x = 140 + 500 * (1 - Math.pow(2, -i / 10)) * 1.3; return <line key={i} x1={x} y1={57} x2={x} y2={77} stroke="#e8d39a" strokeWidth={1.4} />; })}
+    <rect x={128} y={50} width={640} height={34} rx={6} fill="none" stroke="#f59e0b" strokeWidth={1.5} strokeDasharray="5 4" opacity={0.9} />
+    <text x={560} y={44} textAnchor="middle" fontSize={11} fill="#fbbf24">↓ 下に拡大している部分（棹・フレット）</text>
+    <ellipse cx={858} cy={67} rx={118} ry={50} fill="url(#gourd)" />
+    <ellipse cx={858} cy={67} rx={92} ry={36} fill="none" stroke="#e9dcc0" strokeWidth={1.2} opacity={0.6} />
+    <circle cx={858} cy={67} r={9} fill="none" stroke="#e9dcc0" strokeWidth={1} opacity={0.6} />
+    <rect x={906} y={52} width={7} height={30} rx={1.5} fill="#f2e8cf" />
+    <text x={909} y={100} textAnchor="middle" fontSize={10} fill="#e7d9bd">駒（ジャワーリー）</text>
+    <text x={810} y={112} textAnchor="middle" fontSize={10} fill="#e7d9bd">共鳴胴（トゥンバ）</text>
+    {[63, 67, 71].map((y, i) => <line key={i} x1={72} y1={y} x2={910} y2={y + (i - 1) * 2} stroke="#f4f4f6" strokeWidth={i === 1 ? 1.2 : 0.7} opacity={playing && i === 1 ? 1 : 0.7} />)}
+    <text x={58} y={112} textAnchor="middle" fontSize={10} fill="#e7d9bd">上の共鳴胴</text>
+    <text x={250} y={20} textAnchor="middle" fontSize={10} fill="#e7d9bd">糸巻き（ペグ）</text>
+  </svg>
+);

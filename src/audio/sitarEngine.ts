@@ -20,14 +20,14 @@ function rng(seed: number) {
 interface PluckOpts {
   dur?: number; decay?: number; tilt?: number; pluckPos?: number; jawari?: number; jw?: number;
   jc0?: number; jc1?: number; jtau?: number; maxH?: number; soft?: number; click?: number; seed?: number;
-  inharm?: number; hdamp?: number;
+  inharm?: number; hdamp?: number; att?: number;
 }
 
 /** 撥弦音の合成（Float32Array を返す純粋関数） */
 export function renderPluck(f0: number, sr: number, opts: PluckOpts = {}): Float32Array {
   const o = {
     dur: 3, decay: 1.3, tilt: 0.75, pluckPos: 0.13, jawari: 3, jw: 3.5, jc0: 26, jc1: 5, jtau: 0.8,
-    maxH: 48, soft: 0, click: 0.25, seed: 1, inharm: 0.00004, hdamp: 0.075, ...opts,
+    maxH: 48, soft: 0, click: 0.25, seed: 1, inharm: 0.00004, hdamp: 0.075, att: 0.003, ...opts,
   };
   const r = rng(o.seed);
   const n = Math.floor(o.dur * sr);
@@ -69,16 +69,20 @@ export function renderPluck(f0: number, sr: number, opts: PluckOpts = {}): Float
   for (let i = 0; i < n; i++) pk = Math.max(pk, Math.abs(out[i]));
   if (o.click > 0) { // ミズラーブ（金属の爪）のアタック
     const m = Math.floor(sr * 0.012);
-    let prevIn = 0, prevOut = 0;
-    const a = Math.exp(-2 * Math.PI * 1800 / sr);
+    let prevIn = 0, prevOut = 0, lp = 0;
+    const a = Math.exp(-2 * Math.PI * 1200 / sr), b = 1 - Math.exp(-2 * Math.PI * 3500 / sr);
     for (let i = 0; i < m; i++) {
-      const v = (r() * 2 - 1) * Math.exp(-i / (sr * 0.0025));
-      const hp = a * (prevOut + v - prevIn); prevIn = v; prevOut = hp; // 簡易ハイパス
-      out[i] += hp * o.click * pk;
+      const v = (r() * 2 - 1) * Math.exp(-i / (sr * 0.003));
+      const hp = a * (prevOut + v - prevIn); prevIn = v; prevOut = hp; // 低い成分を除き
+      lp += b * (hp - lp);                                            // 耳に刺さる高い成分も除く
+      out[i] += lp * o.click * pk;
     }
   }
   if (o.soft > 0) for (let i = 0; i < n; i++) out[i] *= 1 - Math.exp(-(i / sr) / o.soft);
-  else { const att = Math.floor(sr * 0.001); for (let i = 0; i < att; i++) out[i] *= i / att; }
+  else { // 立ち上がりを数ミリ秒かけてなめらかに（指で弾いたときの角を丸める）
+    const att = Math.floor(sr * o.att);
+    for (let i = 0; i < att; i++) out[i] *= 0.5 - 0.5 * Math.cos((Math.PI * i) / att);
+  }
   pk = 0; for (let i = 0; i < n; i++) pk = Math.max(pk, Math.abs(out[i]));
   if (pk > 0) for (let i = 0; i < n; i++) out[i] *= 0.9 / pk;
   const fade = Math.min(n, Math.floor(sr * Math.min(1.2, o.dur * 0.2)));
@@ -98,7 +102,8 @@ class SitarEngine {
   private bus: GainNode | null = null;
   private tBus: GainNode | null = null;
   private tanBus: GainNode | null = null;
-  private lastMain: { src: AudioBufferSourceNode; gain: GainNode } | null = null;
+  private lastMain: { src: AudioBufferSourceNode; gain: GainNode; semi: number } | null = null;
+  private verb: ConvolverNode | null = null;
   private listeners = new Set<(e: SitarEvent) => void>();
   private tanTimer: number | null = null;
   public sa = 146.83; // サ（主音）：タブラーの右の太鼓の1オクターブ下
@@ -115,6 +120,17 @@ class SitarEngine {
       this.bus = ctx.createGain(); this.bus.gain.value = 0.55; this.bus.connect(out);
       this.tBus = ctx.createGain(); this.tBus.gain.value = 0.3; this.tBus.connect(out);
       this.tanBus = ctx.createGain(); this.tanBus.gain.value = 0.22; this.tanBus.connect(out);
+      // シタール用のやわらかい残響（音と音のつながりを滑らかにする）
+      const len = Math.floor(ctx.sampleRate * 2.6), ir = ctx.createBuffer(2, len, ctx.sampleRate), rr = rng(11);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = ir.getChannelData(ch); let lp = 0;
+        for (let i = 0; i < len; i++) { const t = i / len; lp += 0.35 * ((rr() * 2 - 1) - lp); d[i] = lp * Math.pow(1 - t, 3) * Math.min(1, i / (ctx.sampleRate * 0.015)); }
+      }
+      this.verb = ctx.createConvolver(); this.verb.buffer = ir;
+      const wet = ctx.createGain(); wet.gain.value = 0.32;
+      this.verb.connect(wet); wet.connect(out);
+      const send = ctx.createGain(); send.gain.value = 1;
+      this.bus.connect(send); this.tBus.connect(send); send.connect(this.verb);
     }
     return true;
   }
@@ -128,11 +144,12 @@ class SitarEngine {
     const hit = this.cache.get(key); if (hit) return hit;
     const s = Math.round(hz) + seed;
     const o: PluckOpts =
-      kind === 'da' ? { dur: 5, decay: 1.3, tilt: 0.72, jawari: 3.2, jc0: 26, jc1: 6, jtau: 0.7, click: 0.3, seed: s }
-      : kind === 'ra' ? { dur: 4.5, decay: 1.1, tilt: 0.9, jawari: 2.6, jc0: 22, jc1: 5, jtau: 0.6, click: 0.18, seed: s + 5 }
-      : kind === 'chik' ? { dur: 2.2, decay: 0.45, tilt: 0.7, jawari: 3, jc0: 18, jc1: 4, jtau: 0.3, click: 0.35, maxH: 24, seed: s + 9 }
-      : kind === 'taraf' ? { dur: 4.5, decay: 1.3, tilt: 0.9, jawari: 2.5, jc0: 20, jc1: 4, jtau: 0.8, click: 0, soft: 0.07, maxH: 20, seed: s + 2 }
-      : { dur: 8, decay: 2.6, jawari: 3.5, jw: 4, jc0: 26, jc1: 7, jtau: 2.2, maxH: 60, tilt: 0.6, click: 0.05, soft: 0.01, seed: s + 3 };
+      // 測定にもとづく設定：耳に刺さる高域（3〜8kHz）を抑え、シタールらしい「ビーン」は中域（1〜3kHz）に置く
+      kind === 'da' ? { dur: 5, decay: 1.4, tilt: 0.9, jawari: 2.4, jw: 2.6, jc0: 12, jc1: 4, jtau: 1.0, click: 0.06, hdamp: 0.14, att: 0.005, seed: s }
+      : kind === 'ra' ? { dur: 4.5, decay: 1.25, tilt: 1.0, jawari: 2.1, jw: 2.6, jc0: 10, jc1: 3.5, jtau: 0.9, click: 0.04, hdamp: 0.16, att: 0.006, seed: s + 5 }
+      : kind === 'chik' ? { dur: 2.2, decay: 0.5, tilt: 0.9, jawari: 2.2, jc0: 9, jc1: 3, jtau: 0.35, click: 0.08, hdamp: 0.15, maxH: 20, att: 0.004, seed: s + 9 }
+      : kind === 'taraf' ? { dur: 4.5, decay: 1.4, tilt: 1.0, jawari: 2.0, jc0: 10, jc1: 3, jtau: 0.9, click: 0, soft: 0.08, hdamp: 0.15, maxH: 20, seed: s + 2 }
+      : { dur: 8, decay: 2.6, jawari: 3.0, jw: 3.5, jc0: 16, jc1: 5, jtau: 2.2, maxH: 50, tilt: 0.75, click: 0.03, soft: 0.012, hdamp: 0.1, seed: s + 3 };
     const data = renderPluck(hz, ctx.sampleRate, o);
     const b = ctx.createBuffer(1, data.length, ctx.sampleRate);
     b.getChannelData(0).set(data);
@@ -177,12 +194,12 @@ class SitarEngine {
     const t = Math.max(when ?? ctx.currentTime + 0.005, ctx.currentTime);
     const stroke = opts.stroke ?? 'Da';
     const b = this.buf(this.hz(semi), stroke === 'Ra' ? 'ra' : 'da'); if (!b) return null;
-    // 主弦は1本なので、新しく弾くと前の音は止まる
+    // 主弦は1本なので、新しく弾くと前の音は止まる（ぶつ切りにならないよう約40msで自然に減衰）
     if (this.lastMain) {
-      try { this.lastMain.gain.gain.setTargetAtTime(0, t, 0.015); this.lastMain.src.stop(t + 0.3); } catch { /* noop */ }
+      try { this.lastMain.gain.gain.setTargetAtTime(0, t, 0.04); this.lastMain.src.stop(t + 0.5); } catch { /* noop */ }
     }
     const v = (opts.vel ?? 1) * (stroke === 'Ra' ? 0.8 : 1);
-    const voice = this.play(b, t, this.bus!, v);
+    const voice = { ...this.play(b, t, this.bus!, v), semi };
     this.lastMain = voice;
     for (const m of opts.meend ?? []) {
       const ratio = Math.pow(2, (m.to - semi) / 12);
@@ -210,6 +227,17 @@ class SitarEngine {
     const ctx = this.ctx(); if (!ctx || !this.lastMain) return;
     try { this.lastMain.src.playbackRate.setTargetAtTime(Math.pow(2, semitones / 12), ctx.currentTime, release ? 0.06 : 0.015); } catch { /* noop */ }
   }
+
+  /** 弾き直さずに別の音へ滑らせる（押さえた指をフレットに沿って滑らせる奏法） */
+  glideTo(semi: number, dur = 0.07) {
+    const ctx = this.ctx(); if (!ctx || !this.lastMain) return;
+    const ratio = Math.pow(2, (semi - this.lastMain.semi) / 12);
+    try { this.lastMain.src.playbackRate.setTargetAtTime(ratio, ctx.currentTime, dur / 3); } catch { /* noop */ }
+    this.emit({ type: 'note', semi, stroke: 'Da', meend: null, time: ctx.currentTime });
+  }
+
+  /** いま鳴っている主弦の音（ミーンドや滑らせの基準） */
+  get heldSemi() { return this.lastMain?.semi ?? null; }
 
   /** チカリ弦（高いサ）をジャラン */
   chikari(when?: number, vel = 0.7) {
