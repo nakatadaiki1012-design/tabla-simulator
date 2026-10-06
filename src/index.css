@@ -20,3 +20,15 @@
 .animate-fade-in {
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* 間違えたときに指示文を小さく揺らす */
+@keyframes wiggle {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+.animate-wiggle { animation: wiggle 0.3s ease-in-out; }
+
+/* 画面全体をスクロールさせない（各画面が1画面に収まるように作る） */
+html, body, #root { height: 100%; }
+body { overscroll-behavior: none; }

@@ -3,148 +3,90 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useCallback } from 'react';
-import { Header, TabType } from './components/Header';
+import React, { useCallback, useState } from 'react';
+import { ArrowLeft, GraduationCap, Headphones, Menu, Music2, Drum } from 'lucide-react';
+import { LessonScreen } from './components/simple/LessonScreen';
+import { PlayScreen } from './components/simple/PlayScreen';
+import { ListenScreen } from './components/simple/ListenScreen';
+import { SitarPanel } from './components/SitarPanel';
 import { TablaVisualizer } from './components/TablaVisualizer';
 import { AutoPlayer } from './components/AutoPlayer';
-import { SitarPanel } from './components/SitarPanel';
 import { LearningHub } from './components/LearningHub';
 import { KeyboardGuideModal } from './components/KeyboardGuideModal';
 import { BolKey } from './types/tabla';
 
+type Tab = 'lesson' | 'play' | 'listen' | 'sitar' | 'more' | 'old-play' | 'old-auto' | 'old-learn';
+
+const NAV: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: 'lesson', label: 'レッスン', icon: <GraduationCap className="w-6 h-6" /> },
+  { id: 'play', label: 'たたく', icon: <Drum className="w-6 h-6" /> },
+  { id: 'listen', label: 'きく', icon: <Headphones className="w-6 h-6" /> },
+  { id: 'sitar', label: 'シタール', icon: <Music2 className="w-6 h-6" /> },
+  { id: 'more', label: 'その他', icon: <Menu className="w-6 h-6" /> },
+];
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('simulator');
-  const [isKeyGuideOpen, setIsKeyGuideOpen] = useState<boolean>(false);
-  const [currentTriggeredBol, setCurrentTriggeredBol] = useState<BolKey | null>(null);
-
-  const handleBolTriggered = useCallback((bol: BolKey) => {
-    setCurrentTriggeredBol(bol);
-    setTimeout(() => {
-      setCurrentTriggeredBol((prev) => (prev === bol ? null : prev));
-    }, 50);
-  }, []);
-
-  const isLearningTab =
-    activeTab === 'learning' ||
-    activeTab === 'theory' ||
-    activeTab === 'acoustics' ||
-    activeTab === 'taal' ||
-    activeTab === 'lessons';
+  const [tab, setTab] = useState<Tab>('lesson');
+  const [keyGuide, setKeyGuide] = useState(false);
+  const [, setTriggered] = useState<BolKey | null>(null);
+  const onBol = useCallback((b: BolKey) => setTriggered(b), []);
+  const isOld = tab.startsWith('old-');
+  const navTab = isOld ? 'more' : tab;
 
   return (
-    <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-600 selection:text-white">
-      {/* Top Bar adheres to Top Bar Contract */}
-      <Header
-        activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab)}
-        onOpenKeyGuide={() => setIsKeyGuideOpen(true)}
-      />
+    <div className="h-[100dvh] bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-600 overflow-hidden">
+      {/* 上：ロゴと（PCでは）メニュー */}
+      <header className="h-12 shrink-0 flex items-center justify-between px-4 border-b border-stone-800 bg-stone-950">
+        <button onClick={() => setTab('lesson')} className="font-extrabold text-lg flex items-center gap-1.5"><span>🪘</span>TablaLab</button>
+        <nav className="hidden md:flex items-center gap-1">
+          {NAV.map((n) => (
+            <button key={n.id} onClick={() => setTab(n.id)} className={`px-3 py-1.5 rounded-lg text-sm font-bold ${navTab === n.id ? 'bg-amber-600 text-white' : 'text-stone-400 hover:text-stone-100'}`}>{n.label}</button>
+          ))}
+        </nav>
+      </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 px-3 sm:px-6 lg:px-8 py-3 sm:py-5 max-w-7xl w-full mx-auto flex flex-col gap-3 sm:gap-4">
-        {/* Mobile Navigation Bar - Clean 3 Core Tabs */}
-        <div className="flex lg:hidden items-center gap-1.5 overflow-x-auto pb-1 border-b border-stone-800">
-          {[
-            { id: 'simulator', label: '🪘 演奏・体験' },
-            { id: 'autoplay', label: '🎵 巨匠の自動演奏' },
-            { id: 'sitar', label: '🎸 シタール＆合奏' },
-            { id: 'learning', label: '📚 学習・レッスン' },
-          ].map((item) => {
-            const isSelected = item.id === 'learning' ? isLearningTab : activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id as TabType)}
-                className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg whitespace-nowrap transition-colors ${
-                  isSelected
-                    ? 'bg-amber-600 text-white shadow-sm font-bold'
-                    : 'bg-stone-900 text-stone-400 hover:text-stone-200'
-                }`}
-              >
-                {item.label}
+      {/* 中身：各画面は1画面に収まる。従来の詳しい画面だけスクロール */}
+      <main className={`flex-1 min-h-0 ${isOld ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+        {tab === 'lesson' && <LessonScreen />}
+        {tab === 'play' && <PlayScreen />}
+        {tab === 'listen' && <ListenScreen />}
+        {tab === 'sitar' && <SitarPanel />}
+        {tab === 'more' && (
+          <div className="h-full flex flex-col gap-2 p-4 max-w-md mx-auto w-full">
+            <div className="text-xs text-stone-500 mb-1">くわしい画面（上級者向け）</div>
+            {([
+              ['old-play', '🥁 くわしい演奏画面', '音源の切りかえ・手の形の表示など'],
+              ['old-auto', '🎼 巨匠の自動演奏（くわしい版）', '曲の解説・ガイドに合わせて叩く'],
+              ['old-learn', '📚 しくみと理論', '音の物理・ターラ・楽器の構造'],
+            ] as const).map(([id, t, d]) => (
+              <button key={id} onClick={() => setTab(id)} className="text-left rounded-2xl bg-stone-900 border border-stone-800 px-4 py-3.5">
+                <div className="font-bold text-stone-100">{t}</div><div className="text-xs text-stone-500">{d}</div>
               </button>
-            );
-          })}
-        </div>
-
-        {/* TAB 1: Simulator (演奏・体験) */}
-        {activeTab === 'simulator' && (
-          <div className="flex flex-col gap-4 animate-fade-in">
-            <TablaVisualizer activeBolKey={currentTriggeredBol} />
+            ))}
+            <button onClick={() => setKeyGuide(true)} className="text-left rounded-2xl bg-stone-900 border border-stone-800 px-4 py-3.5 font-bold">⌨️ キー操作表</button>
+            <div className="mt-auto text-[11px] text-stone-600">タブラーの録音：mmiron（Freesound・CC0）</div>
           </div>
         )}
-
-        {/* TAB 2: Auto-Performance (巨匠の自動演奏 - 実際の名演を再現) */}
-        {activeTab === 'autoplay' && (
-          <div className="flex flex-col gap-6 animate-fade-in">
-            <AutoPlayer onBolPlayed={handleBolTriggered} />
-          </div>
-        )}
-
-        {/* TAB: シタール＆アンサンブル */}
-        {activeTab === 'sitar' && (
-          <div className="flex flex-col gap-6 animate-fade-in">
-            <SitarPanel />
-          </div>
-        )}
-
-        {/* TAB 3: Unified Learning Hub (レッスン・音の仕組み・拍子体系) */}
-        {isLearningTab && (
-          <div className="flex flex-col gap-6 animate-fade-in">
-            <LearningHub
-              initialSubTab={
-                activeTab === 'theory' || activeTab === 'lessons'
-                  ? 'lessons'
-                  : activeTab === 'taal'
-                  ? 'taal'
-                  : 'lessons'
-              }
-              onPlayBol={handleBolTriggered}
-              onNavigateToSimulator={() => setActiveTab('simulator')}
-            />
+        {isOld && (
+          <div className="px-3 sm:px-6 py-3 max-w-7xl mx-auto w-full flex flex-col gap-3">
+            <button onClick={() => setTab('more')} className="self-start flex items-center gap-1 text-sm text-stone-400 py-1"><ArrowLeft className="w-4 h-4" />もどる</button>
+            {tab === 'old-play' && <TablaVisualizer activeBolKey={null} />}
+            {tab === 'old-auto' && <AutoPlayer onBolPlayed={onBol} />}
+            {tab === 'old-learn' && <LearningHub initialSubTab="lessons" onPlayBol={onBol} onNavigateToSimulator={() => setTab('play')} />}
           </div>
         )}
       </main>
 
-      {/* Editorial Footer */}
-      <footer className="mt-auto border-t border-stone-800 bg-stone-950 px-6 py-5 text-stone-500 text-xs">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-stone-300">TablaLab</span>
-            <span aria-hidden="true">·</span>
-            <span>教育用タブラー・バーヤーン音響シミュレーター ＆ 古典演奏再現</span>
-          </div>
+      {/* 下：大きなタブ（スマホ・タブレット） */}
+      <nav className="md:hidden shrink-0 grid grid-cols-5 border-t border-stone-800 bg-stone-950 pb-[env(safe-area-inset-bottom)]">
+        {NAV.map((n) => (
+          <button key={n.id} onClick={() => setTab(n.id)} className={`flex flex-col items-center justify-center gap-0.5 py-2 ${navTab === n.id ? 'text-amber-400' : 'text-stone-500'}`}>
+            {n.icon}<span className="text-[10px] font-bold">{n.label}</span>
+          </button>
+        ))}
+      </nav>
 
-          <div className="flex items-center gap-4 text-stone-400">
-            <button
-              onClick={() => setActiveTab('simulator')}
-              className="hover:text-stone-200 transition-colors"
-            >
-              演奏
-            </button>
-            <span aria-hidden="true">·</span>
-            <button
-              onClick={() => setActiveTab('autoplay')}
-              className="hover:text-stone-200 transition-colors"
-            >
-              自動演奏
-            </button>
-            <span aria-hidden="true">·</span>
-            <button
-              onClick={() => setActiveTab('learning')}
-              className="hover:text-amber-300 transition-colors font-semibold"
-            >
-              学習・レッスン
-            </button>
-          </div>
-        </div>
-      </footer>
-
-      {/* Keyboard Guide Modal */}
-      <KeyboardGuideModal
-        isOpen={isKeyGuideOpen}
-        onClose={() => setIsKeyGuideOpen(false)}
-      />
+      <KeyboardGuideModal isOpen={keyGuide} onClose={() => setKeyGuide(false)} />
     </div>
   );
 }

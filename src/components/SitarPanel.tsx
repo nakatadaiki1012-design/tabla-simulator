@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Music, Play, Square, Repeat, Info } from 'lucide-react';
+import { Play, Square, Repeat, Info, X } from 'lucide-react';
 import { sitarAudio, SitarStroke } from '../audio/sitarEngine';
 import { tablaAudio } from '../audio/tablaAudioEngine';
 import { ensemble, ENSEMBLE_TAALS, FLOW, beatMarks } from '../audio/ensemble';
@@ -37,6 +37,8 @@ export const SitarPanel: React.FC = () => {
   const [section, setSection] = useState<string | null>(null);
   const [finalFlash, setFinalFlash] = useState(false);
   const [preparing, setPreparing] = useState(false);
+  const [panel, setPanel] = useState<'free' | 'jam' | 'auto'>('free');
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const raag = RAAGS.find((r) => r.id === raagId)!;
   const ladder = useMemo(() => ladderOf(raag), [raag]);
@@ -232,38 +234,24 @@ export const SitarPanel: React.FC = () => {
   const marks = beatMarks(perfTaal);
   const zones = [{ semi: OPEN_STRING, x0: NUT, x1: NUT + 14 }, ...ladder.map((s, i) => ({ semi: s, x0: i ? xOf(ladder[i - 1]) : NUT + 14, x1: xOf(s) }))];
 
+  const short = (n: string) => n.replace(/（.*/, '');
   return (
-    <div className="flex flex-col gap-4">
-      {/* 操作バー */}
-      <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-4 flex flex-wrap items-end gap-3">
-        <div className="flex items-center gap-2 mr-2">
-          <Music className="w-5 h-5 text-amber-500" />
-          <h2 className="text-base sm:text-lg font-bold text-stone-100">シタール ＆ アンサンブル</h2>
-        </div>
-        <label className="flex flex-col text-[11px] text-stone-400 gap-1">ラーガ
-          <select value={raagId} onChange={(e) => setRaagId(e.target.value)} className="bg-stone-950 border border-stone-700 rounded-lg px-2 py-1.5 text-sm text-stone-100">
-            {RAAGS.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-          </select>
-        </label>
-        <div className="flex flex-col text-[11px] text-stone-400 gap-1">調（サ）
-          <div className="flex gap-1">
-            {KEYS.map((k, i) => (
-              <button key={k.label} onClick={() => setKeyIdx(i)} className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border ${i === keyIdx ? 'bg-amber-600 border-amber-500 text-white' : 'bg-stone-950 border-stone-700 text-stone-300'}`}>{k.label}</button>
-            ))}
-          </div>
-        </div>
-        <button onClick={toggleTanpura} className={`px-3 py-2 rounded-lg text-xs font-bold border ${tanpura ? 'bg-emerald-700 border-emerald-500 text-white' : 'bg-stone-950 border-stone-700 text-stone-300'}`}>
-          タンプーラ（持続音）{tanpura ? 'ON' : 'OFF'}
-        </button>
-        <p className="text-[11px] text-stone-500 w-full">調を変えると、タブラーの右の太鼓もシタールに合わせて自動で調律されます。</p>
+    <div className="h-full flex flex-col gap-2 p-3 max-w-6xl mx-auto w-full relative">
+      {/* 1行の操作バー */}
+      <div className="flex items-center gap-2">
+        <select value={raagId} onChange={(e) => setRaagId(e.target.value)} aria-label="ラーガ" className="bg-stone-900 border border-stone-700 rounded-xl px-3 py-2.5 text-sm font-bold text-stone-100 min-w-0 flex-1 sm:flex-none sm:w-48">
+          {RAAGS.map((r) => <option key={r.id} value={r.id}>{short(r.name)}</option>)}
+        </select>
+        <select value={keyIdx} onChange={(e) => setKeyIdx(+e.target.value)} aria-label="調" className="bg-stone-900 border border-stone-700 rounded-xl px-2 py-2.5 text-sm font-bold text-stone-100 w-20">
+          {KEYS.map((k, i) => <option key={k.label} value={i}>調 {k.label}</option>)}
+        </select>
+        <button onClick={toggleTanpura} aria-label="タンプーラ（持続音）" className={`h-11 px-3 rounded-xl text-sm font-bold whitespace-nowrap ${tanpura ? 'bg-emerald-700 text-white' : 'bg-stone-800 text-stone-300'}`}>🎵 持続音</button>
+        <button onClick={() => setInfoOpen(true)} aria-label="説明" className="w-11 h-11 rounded-xl bg-stone-800 flex items-center justify-center shrink-0"><Info className="w-5 h-5 text-stone-300" /></button>
       </div>
 
-      {/* 棹 */}
-      <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-3 sm:p-4">
-        <SitarOverview playing={curNote != null} />
-        <div className="sm:hidden text-[11px] text-stone-500 mb-1">← 棹は横にスクロールできます →</div>
+      <div className="hidden lg:block"><SitarOverview playing={curNote != null} /></div>
         <div ref={scrollRef} className="overflow-x-auto rounded-xl">
-        <svg ref={svgRef} viewBox="0 0 1000 236" className="w-full min-w-[880px] sm:min-w-0 h-auto select-none rounded-xl" style={{ touchAction: 'pan-x', background: 'radial-gradient(ellipse at 50% 40%,#2a1a10,#120a06)' }}
+        <svg ref={svgRef} viewBox="0 0 1000 236" className="w-full min-w-[1040px] sm:min-w-0 h-auto select-none rounded-xl" style={{ touchAction: 'pan-x', background: 'radial-gradient(ellipse at 50% 40%,#2a1a10,#120a06)' }}
           onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
           <defs>
             <linearGradient id="neckWood" x1="0" y1="0" x2="0" y2="1">
@@ -338,113 +326,93 @@ export const SitarPanel: React.FC = () => {
           <text x={NUT + 4} y={SY - 7} fontSize={8.5} fill="#e7d9bd" opacity={0.75} pointerEvents="none">主弦（開放＝低いマ）</text>
         </svg>
         </div>
-        <div className="text-xs text-teal-300 min-h-[1.2em] mt-1">{meendText}</div>
-        <div className="flex flex-wrap items-center gap-1 mt-1">
-          <span className="text-[11px] text-stone-500 mr-1">共鳴弦（タラフ）：</span>
-          {taraf.map((s, i) => (
-            <span key={i} className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${glowTaraf.has(i) ? 'bg-teal-400 text-stone-950 border-teal-300 shadow-[0_0_10px_#2dd4bf]' : 'border-stone-700 text-stone-500'}`}>{swaraName(s).rom}</span>
-          ))}
-        </div>
-        <div className="grid grid-cols-3 gap-2 mt-3 text-center">
-          <div className="bg-stone-950 border border-stone-800 rounded-xl p-2"><div className="text-[10px] text-stone-500">いまの音</div><div className="text-xl font-extrabold text-amber-400">{curName ? curName.rom : '–'}</div><div className="text-[11px] text-stone-400">{curName ? curName.full : ''}</div></div>
-          <div className="bg-stone-950 border border-stone-800 rounded-xl p-2"><div className="text-[10px] text-stone-500">右手の爪の向き</div><div className="text-xl font-extrabold text-amber-400">{stroke}</div><div className="text-[10px] text-stone-500">Da＝内向き／Ra＝外向き</div></div>
-          <div className="bg-stone-950 border border-stone-800 rounded-xl p-2"><div className="text-[10px] text-stone-500">いまの部分</div><div className="text-sm font-bold text-amber-400">{finalFlash ? '🎉 サムで終演！' : sec ? `${sec.no}. ${sec.name}` : mode === 'jam' ? 'タブラー伴奏中' : '–'}</div><div className="text-[10px] text-stone-400 leading-tight">{sec?.point}</div></div>
-        </div>
-        <p className="text-[11px] text-stone-500 mt-2 leading-relaxed">
-          👆 フレットを押すと弾けます。<b className="text-stone-300">押したまま上にドラッグ</b>で弦を引っ張る「ミーンド」。
-          <span className="hidden sm:inline">キーボード：<kbd className="text-teal-300">Z〜M</kbd> 低音域、<kbd className="text-teal-300">A〜L</kbd> サから上、<kbd className="text-teal-300">Q〜P</kbd> 高いサから上、<kbd className="text-teal-300">Space</kbd> チカリ、<kbd className="text-teal-300">Shift</kbd>＋キーで下の音から滑り込み。</span>
-        </p>
-      </div>
 
-      {/* アンサンブル */}
-      <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-4 flex flex-col gap-3">
-        <h3 className="text-sm font-bold text-stone-100 flex items-center gap-2">🪘 タブラーと一緒に演奏（アンサンブル）</h3>
-        {/* 周期の表示 */}
+      {/* いまの音（1行） */}
+      <div className="flex items-center gap-3 h-9 px-1">
+        {curName ? (<>
+          <span className="text-2xl font-extrabold text-amber-400 w-14">{curName.rom}</span>
+          <span className="text-xs font-bold text-stone-400 w-10">{stroke}</span>
+        </>) : <span className="text-sm text-stone-500">👆 フレットを押してみよう</span>}
+        <span className="text-xs text-teal-300 truncate flex-1">{finalFlash ? '🎉 サムで終演！' : meendText}</span>
         {mode !== 'none' && (mode === 'jam' || beat >= 0) && (
-          <div className="flex flex-wrap gap-1">
+          <div className="flex gap-0.5">
             {Array.from({ length: perfTaal.beats }, (_, i) => (
-              <div key={i} className={`w-7 h-7 rounded-full border-2 text-[10px] font-bold flex items-center justify-center transition-colors ${markColor(marks[i])} ${beat === i ? (i === 0 ? 'bg-red-500 text-white' : 'bg-amber-500 text-stone-950') : 'bg-stone-950'}`}>
-                {marks[i] || i + 1}
-              </div>
+              <div key={i} className={`w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full border ${marks[i]?.startsWith('X') ? 'border-red-500' : marks[i] === '0' ? 'border-sky-500' : 'border-stone-600'} ${beat === i ? (i === 0 ? 'bg-red-500' : 'bg-amber-400') : ''}`} />
             ))}
-            <span className="text-[11px] text-stone-500 self-center ml-2"><span className="text-red-400">X＝サム（1拍目）</span>・<span className="text-amber-400">数字＝手拍子</span>・<span className="text-sky-400">0＝カーリー（低音が抜ける）</span></span>
           </div>
         )}
-
-        <div className="grid md:grid-cols-2 gap-3">
-          {/* ジャム */}
-          <div className="bg-stone-950/70 border border-stone-800 rounded-xl p-3 flex flex-col gap-2">
-            <div className="text-sm font-bold text-amber-400">① タブラーの伴奏で、自分でシタールを弾く</div>
-            <p className="text-xs text-stone-400">タブラーがリズムの周期（テーカ）を刻み続けます。上の棹やキーボードで、ラーガの音を自由に弾いてみよう。周期の1拍目（サム）に合わせて「サ」を弾くと気持ちよく決まります。</p>
-            <div className="flex flex-wrap gap-2 items-end">
-              <label className="flex flex-col text-[11px] text-stone-400 gap-1">ターラ
-                <select value={taalId} onChange={(e) => { setTaalId(e.target.value); setBpm(ENSEMBLE_TAALS.find((t) => t.id === e.target.value)!.bpm); }} className="bg-stone-900 border border-stone-700 rounded-lg px-2 py-1.5 text-sm text-stone-100">
-                  {ENSEMBLE_TAALS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </select>
-              </label>
-              <label className="flex flex-col text-[11px] text-stone-400 gap-1">テンポ {bpm}
-                <input type="range" min={40} max={220} value={bpm} onChange={(e) => setBpm(+e.target.value)} className="accent-amber-500 w-36" />
-              </label>
-              {mode === 'jam'
-                ? <button onClick={stopAll} className="px-3 py-2 rounded-lg bg-red-600 text-white text-xs font-bold flex items-center gap-1"><Square className="w-3.5 h-3.5" />止める</button>
-                : <button onClick={startJam} disabled={preparing} className="px-3 py-2 rounded-lg bg-amber-600 text-white text-xs font-bold flex items-center gap-1 disabled:opacity-50"><Repeat className="w-3.5 h-3.5" />伴奏スタート</button>}
-            </div>
-            <div className="text-[11px] text-stone-500 font-mono">{taal.label.join(' ')}</div>
-          </div>
-
-          {/* 自動アンサンブル */}
-          <div className="bg-stone-950/70 border border-stone-800 rounded-xl p-3 flex flex-col gap-2">
-            <div className="text-sm font-bold text-amber-400">② シタールとタブラーの自動アンサンブル</div>
-            <p className="text-xs text-stone-400">選んだラーガで、シタール演奏の一般的な流れを約2分で通します。前半はシタールだけ、ガットからタブラーが加わり、最後は一緒にサムへ着地します。</p>
-            <div className="flex flex-wrap gap-2">
-              {mode === 'performance'
-                ? <button onClick={stopAll} className="px-3 py-2 rounded-lg bg-red-600 text-white text-xs font-bold flex items-center gap-1"><Square className="w-3.5 h-3.5" />止める</button>
-                : <button onClick={() => startPerf(FLOW.map((f) => f.id))} disabled={preparing} className="px-3 py-2 rounded-lg bg-amber-600 text-white text-xs font-bold flex items-center gap-1 disabled:opacity-50"><Play className="w-3.5 h-3.5" />{preparing ? '音を準備中…' : '通しで演奏'}</button>}
-              <button onClick={() => startPerf(['gat', 'toda', 'drut'])} disabled={preparing || mode === 'performance'} className="px-3 py-2 rounded-lg bg-stone-800 border border-stone-700 text-stone-200 text-xs font-bold disabled:opacity-40">🪘 タブラー入りの部分だけ</button>
-            </div>
-            <p className="text-[10px] text-stone-500">🛠 旋律（ガット・トーダーなど）はこのアプリのオリジナルで、ラーガの音階に沿って自動で組み立てています。</p>
-          </div>
-        </div>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-          {FLOW.map((f) => (
-            <div key={f.id} className={`rounded-xl border p-3 transition-all ${section === f.id ? 'border-amber-500 bg-amber-950/30 shadow-[0_0_0_2px_rgba(245,158,11,.25)]' : 'border-stone-800 bg-stone-950/50'}`}>
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-bold text-stone-100"><span className="inline-flex w-5 h-5 rounded-full bg-amber-600 text-white text-[11px] items-center justify-center mr-1.5">{f.no}</span>{f.name} {f.tabla && '🪘'}</div>
-                <button onClick={() => startPerf([f.id])} disabled={preparing || mode === 'performance'} className="text-[11px] px-2 py-1 rounded-md bg-stone-800 border border-stone-700 text-stone-200 disabled:opacity-40">▶ ここだけ</button>
-              </div>
-              <div className="text-[10px] text-teal-300 font-bold mt-1">{f.laya}・{f.tabla ? 'タブラーあり' : 'タブラーなし'}</div>
-              <p className="text-xs text-stone-400 mt-1 leading-relaxed">{f.text}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* ラーガの説明 */}
-      <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-4 flex flex-col gap-2">
-        <h3 className="text-sm font-bold text-stone-100 flex items-center gap-2"><Info className="w-4 h-4 text-amber-500" />{raag.name}</h3>
-        <div className="text-xs text-stone-400">🕰 {raag.time}　💭 {raag.mood}　／ ヴァーディー（最重要音）：{raag.vadi}・サンヴァーディー：{raag.samvadi}</div>
-        <p className="text-sm text-stone-300">{raag.desc}</p>
-        <div className="grid sm:grid-cols-3 gap-2 text-xs">
-          {[['上行（アーロハ）', raag.aroha, 0.45], ['下行（アヴァローハ）', raag.avaroha, 0.45], ['特徴的なフレーズ（パカド）', raag.pakad, 0.42]].map(([label, s, step]) => (
-            <button key={label as string} onClick={() => playSargam(s as string, step as number)} className="text-left bg-stone-950 border border-stone-800 rounded-lg p-2 hover:border-amber-600">
-              <div className="text-stone-400">▶ {label as string}</div><div className="font-mono text-teal-300 mt-0.5">{s as string}</div>
-            </button>
-          ))}
-        </div>
-        <details className="text-xs text-stone-400 mt-1">
-          <summary className="cursor-pointer text-teal-300">シタールのしくみ・用語</summary>
-          <ul className="list-disc pl-5 mt-2 space-y-1 leading-relaxed">
-            <li><b className="text-stone-200">パルダー（フレット）</b>：弓なりの金属フレット。動かせるので、ラーガに合わせて位置を変えます（この棹にもラーガの音だけが並びます）。</li>
-            <li><b className="text-stone-200">ミーンド</b>：弦をフレットに沿って横に引き、音程を連続的に上げる技。声のような滑らかさがシタールの魅力。</li>
-            <li><b className="text-stone-200">ジャワーリー（駒）</b>：平らな駒に弦が触れたり離れたりして生まれる「ビーン」という唸り。</li>
-            <li><b className="text-stone-200">チカリ弦</b>：高いサの細い弦。リズムを刻む「チャン」。</li>
-            <li><b className="text-stone-200">タラフ（共鳴弦）</b>：フレットの下の11〜13本の弦。弾かなくても、同じ音が鳴ると共鳴して残響のように響きます。</li>
-            <li><b className="text-stone-200">ミズラーブ（爪）</b>：右手の針金の爪。内向き＝Da、外向き＝Ra。</li>
-            <li>音名：サ・レ・ガ・マ・パ・ダ・ニ（ド〜シ）。小文字 r g d n は半音低い「コーマル」、M# は半音高い「ティーヴラ」。</li>
-          </ul>
-        </details>
+      {/* モード */}
+      <div className="grid grid-cols-3 gap-1 bg-stone-900 p-1 rounded-xl">
+        {([['free', '🎸 自由に'], ['jam', '🪘 伴奏'], ['auto', '▶ 自動演奏']] as const).map(([id, label]) => (
+          <button key={id} onClick={() => { if (id !== panel) { stopAll(); setPanel(id); } }}
+            className={`py-2.5 rounded-lg text-sm font-bold ${panel === id ? 'bg-amber-600 text-white' : 'text-stone-400'}`}>{label}</button>
+        ))}
       </div>
+
+      <div className="min-h-[96px] flex flex-col justify-center gap-2">
+        {panel === 'free' && (
+          <>
+            <div className="text-center text-xs text-stone-400">押す＝弾く　上へドラッグ＝ミーンド　横へ動かす＝すべらせる</div>
+            <div className="grid grid-cols-3 gap-2">
+              {([['▶ 上がる', raag.aroha, 0.45], ['▶ 下がる', raag.avaroha, 0.45], ['▶ 特徴フレーズ', raag.pakad, 0.42]] as const).map(([l, str, st]) => (
+                <button key={l} onClick={() => playSargam(str, st)} className="py-3 rounded-xl bg-stone-800 text-stone-200 text-sm font-bold">{l}</button>
+              ))}
+            </div>
+          </>
+        )}
+        {panel === 'jam' && (
+          <div className="flex items-center gap-2">
+            <select value={taalId} onChange={(e) => { setTaalId(e.target.value); setBpm(ENSEMBLE_TAALS.find((t) => t.id === e.target.value)!.bpm); }} aria-label="ターラ" className="bg-stone-900 border border-stone-700 rounded-xl px-2 py-3 text-sm font-bold text-stone-100 min-w-0 flex-1">
+              {ENSEMBLE_TAALS.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+            <label className="flex flex-col items-center text-[10px] text-stone-400 w-28">テンポ {bpm}
+              <input type="range" min={40} max={220} value={bpm} onChange={(e) => setBpm(+e.target.value)} className="accent-amber-500 w-full" />
+            </label>
+            {mode === 'jam'
+              ? <button onClick={stopAll} className="h-12 px-5 rounded-xl bg-red-600 text-white font-bold flex items-center gap-1"><Square className="w-4 h-4" />止める</button>
+              : <button onClick={startJam} disabled={preparing} className="h-12 px-5 rounded-xl bg-amber-600 text-white font-bold flex items-center gap-1 disabled:opacity-50"><Repeat className="w-4 h-4" />スタート</button>}
+          </div>
+        )}
+        {panel === 'auto' && (
+          <>
+            <div className="grid grid-cols-6 gap-1">
+              {FLOW.map((f) => (
+                <button key={f.id} onClick={() => startPerf([f.id])} disabled={preparing || mode === 'performance'}
+                  className={`py-2 rounded-lg text-[11px] font-bold leading-tight ${section === f.id ? 'bg-amber-500 text-stone-950' : 'bg-stone-800 text-stone-300'} disabled:opacity-100`}>
+                  {f.tabla ? '🪘' : '🎸'}<br />{f.name.replace(/（.*/, '').replace('トーダー＋ティハーイー', 'トーダー')}
+                </button>
+              ))}
+            </div>
+            {mode === 'performance'
+              ? <button onClick={stopAll} className="h-12 rounded-xl bg-red-600 text-white font-bold flex items-center justify-center gap-1"><Square className="w-4 h-4" />止める</button>
+              : <button onClick={() => startPerf(FLOW.map((f) => f.id))} disabled={preparing} className="h-12 rounded-xl bg-amber-600 text-white font-bold flex items-center justify-center gap-1 disabled:opacity-50"><Play className="w-4 h-4" />{preparing ? '準備中…' : '最初から通して聞く（約2分）'}</button>}
+          </>
+        )}
+      </div>
+
+      {/* 説明（ⓘ を押したときだけ） */}
+      {infoOpen && (
+        <div className="absolute inset-0 z-30 bg-black/60 flex items-end sm:items-center justify-center" onClick={() => setInfoOpen(false)}>
+          <div className="w-full sm:max-w-lg max-h-[85%] overflow-y-auto bg-stone-900 border border-stone-700 rounded-t-3xl sm:rounded-3xl p-5 flex flex-col gap-3 text-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between"><b className="text-stone-100 text-base">{raag.name}</b><button onClick={() => setInfoOpen(false)} aria-label="閉じる"><X className="w-5 h-5" /></button></div>
+            <div className="text-stone-300">{raag.desc}</div>
+            <div className="text-xs text-stone-400">🕰 {raag.time}　💭 {raag.mood}</div>
+            <div className="text-xs font-mono text-teal-300">上がる {raag.aroha}<br />下がる {raag.avaroha}</div>
+            <hr className="border-stone-800" />
+            <ul className="text-xs text-stone-400 space-y-1.5 leading-relaxed">
+              <li><b className="text-stone-200">ミーンド</b>：弦を横に引いて音程を上げる技</li>
+              <li><b className="text-stone-200">チカリ弦</b>：上の細い2本。リズムの「チャン」</li>
+              <li><b className="text-stone-200">共鳴弦</b>：フレットの下の細い弦。同じ音で光って響く</li>
+              <li><b className="text-stone-200">Da / Ra</b>：右手の爪の向き（内向き／外向き）</li>
+              <li><b className="text-stone-200">自動演奏の順番</b>：{FLOW.map((f) => f.name.replace(/（.*/, '')).join(' → ')}</li>
+              <li className="hidden sm:list-item"><b className="text-stone-200">キーボード</b>：Z〜M 低音／A〜L サから上／Q〜P 高いサから上／Space チカリ／Shift＋キー＝下から滑り込み</li>
+            </ul>
+            <p className="text-[11px] text-stone-500">🛠 自動演奏の旋律はこのアプリのオリジナルです。</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
