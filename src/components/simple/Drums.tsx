@@ -22,23 +22,23 @@ const KEYMAP: Record<string, BolKey> = {
 };
 
 // ---- 太鼓の形（座標） ----
-const B = { cx: 118, cy: 128, rx: 100, ry: 44 };      // バーヤーンの皮
-const BS = { cx: 138, cy: 120, rx: 30, ry: 13 };       // バーヤーンの黒い所（中心から少しずれている）
-const D = { cx: 330, cy: 112, rx: 80, ry: 35 };        // ダーヤーンの皮（外周）
-const ell = (e: { cx: number; cy: number }, rx: number, ry: number) => ({ cx: e.cx, cy: e.cy, rx, ry });
+const B = { cx: 112, cy: 118, r: 80 };   // バーヤーンの皮（真上から）
+const BS = { cx: 130, cy: 103, r: 27 };  // バーヤーンの黒い所（中心から少しずれている）
+const D = { cx: 330, cy: 118, r: 70 };   // ダーヤーンの皮（外周）
+const circ = (e: { cx: number; cy: number }, r: number) => ({ cx: e.cx, cy: e.cy, r });
 
 // ---- 手のポーズ：指先の位置・向き・形 ----
 type HandShape = 'index' | 'two' | 'flat' | 'fingers';
 interface Pose { x: number; y: number; rot: number; shape: HandShape; left?: boolean }
 const POSE: Partial<Record<BolKey, Pose>> = {
-  na: { x: 330, y: 80, rot: -18, shape: 'index' },          // 人差し指で縁（キナール）を弾く
-  tin: { x: 360, y: 101, rot: -28, shape: 'index' },        // 人差し指で中間（スール）
-  tun: { x: 330, y: 112, rot: -22, shape: 'index' },        // 人差し指で中央
-  te: { x: 330, y: 113, rot: -10, shape: 'fingers' },       // 中指・薬指で中央を押さえる
-  re: { x: 322, y: 110, rot: -30, shape: 'index' },         // 人差し指で黒い所を閉じて
-  ge: { x: 96, y: 140, rot: 22, shape: 'two', left: true }, // 中指・人差し指で弾き、手首は縁に
-  meend: { x: 96, y: 140, rot: 22, shape: 'two', left: true },
-  ke: { x: 120, y: 128, rot: 12, shape: 'flat', left: true }, // 手のひらで押さえる
+  na: { x: 330, y: 54, rot: -10, shape: 'index' },          // 人差し指で縁（キナール）を弾く
+  tin: { x: 372, y: 96, rot: -30, shape: 'index' },        // 人差し指で中間（スール）
+  tun: { x: 330, y: 118, rot: -20, shape: 'index' },        // 人差し指で中央
+  te: { x: 326, y: 116, rot: -10, shape: 'fingers' },       // 中指・薬指で中央を押さえる
+  re: { x: 318, y: 110, rot: -28, shape: 'index' },         // 人差し指で黒い所を閉じて
+  ge: { x: 88, y: 136, rot: 20, shape: 'two', left: true }, // 中指・人差し指で弾き、手首は縁に
+  meend: { x: 88, y: 136, rot: 20, shape: 'two', left: true },
+  ke: { x: 112, y: 122, rot: 10, shape: 'flat', left: true }, // 手のひらで押さえる
 };
 
 const Hand: React.FC<{ pose: Pose }> = ({ pose }) => {
@@ -119,11 +119,24 @@ export const Drums: React.FC<Props> = ({ onHit, target = [], silent }) => {
   const lit = (b: BolKey) => target.includes(b) || target.some((t) => (PARTS[t] || []).includes(b) || (t === 'meend' && b === 'ge'));
   const down = (b: BolKey) => (e: React.PointerEvent) => { e.preventDefault(); e.stopPropagation(); hit(b); };
   const struck = (b: BolKey) => hits.some((h) => h.bol === b || (b === 'ge' && h.bol === 'meend'));
-  type E = { cx: number; cy: number; rx: number; ry: number };
-  const zone = (b: BolKey, e: E, fill: string, extra?: React.SVGProps<SVGEllipseElement>) => (
-    <ellipse {...e} fill={fill} onPointerDown={down(b)} className="cursor-pointer" style={{ filter: struck(b) ? 'brightness(1.22)' : undefined }} {...extra} />
+  type C = { cx: number; cy: number; r: number };
+  const zone = (b: BolKey, c: C, fill: string, extra?: React.SVGProps<SVGCircleElement>) => (
+    <circle {...c} fill={fill} onPointerDown={down(b)} className="cursor-pointer" style={{ filter: struck(b) ? 'brightness(1.18)' : undefined }} {...extra} />
   );
-  const pulse = (e: E) => <ellipse {...e} fill="none" stroke="#fbbf24" strokeWidth={3.5} pointerEvents="none" className="animate-pulse" />;
+  const pulse = (c: C) => <circle {...c} fill="none" stroke="#fbbf24" strokeWidth={3.5} pointerEvents="none" className="animate-pulse" />;
+  // 真上から見た革ひも（編んだ縁から外へ放射状にのびる）
+  const radial = (cx: number, cy: number, r1: number, r2: number, n: number, w = 3) =>
+    Array.from({ length: n }, (_, i) => {
+      const a = (i / n) * Math.PI * 2;
+      return <line key={i} x1={cx + Math.cos(a) * r1} y1={cy + Math.sin(a) * r1} x2={cx + Math.cos(a) * r2} y2={cy + Math.sin(a) * r2} stroke="#3a200d" strokeWidth={w} strokeLinecap="round" opacity={0.9} pointerEvents="none" />;
+    });
+  // シャーヒー：何層にも塗り重ねた黒い円（同心円のすじ）とつや
+  const syahi = (cx: number, cy: number, r: number) => (
+    <g pointerEvents="none">
+      {[0.82, 0.62, 0.42].map((k, i) => <circle key={i} cx={cx} cy={cy} r={r * k} fill="none" stroke="#3a3a42" strokeWidth={0.7} opacity={0.8} />)}
+      <ellipse cx={cx - r * 0.32} cy={cy - r * 0.38} rx={r * 0.4} ry={r * 0.18} fill="#fff" opacity={0.13} transform={`rotate(-30 ${cx - r * 0.32} ${cy - r * 0.38})`} />
+    </g>
+  );
   const label = (x: number, y: number, roman: string, kana: string, dark = true, size = 13) => (
     <g pointerEvents="none">
       <text x={x} y={y} textAnchor="middle" fontSize={size} fontWeight={800} fill={dark ? '#3a2412' : '#f5ead8'}>{roman}</text>
@@ -142,69 +155,76 @@ export const Drums: React.FC<Props> = ({ onHit, target = [], silent }) => {
     });
 
   return (
-    <svg viewBox="0 0 440 300" className="w-full h-full select-none" style={{ touchAction: 'none' }} preserveAspectRatio="xMidYMid meet">
+    <svg viewBox="0 0 440 236" className="w-full h-full select-none" style={{ touchAction: 'none' }} preserveAspectRatio="xMidYMid meet">
       <defs>
-        <radialGradient id="skinHead" cx="45%" cy="38%" r="70%"><stop offset="0" stopColor="#f7ead0" /><stop offset="1" stopColor="#d6ba8a" /></radialGradient>
-        <radialGradient id="kinar" cx="50%" cy="40%" r="60%"><stop offset="0" stopColor="#f2e2c2" /><stop offset="1" stopColor="#cdb07e" /></radialGradient>
-        <radialGradient id="syahi" cx="38%" cy="32%" r="70%"><stop offset="0" stopColor="#55555c" /><stop offset=".6" stopColor="#1a1a1e" /><stop offset="1" stopColor="#0a0a0c" /></radialGradient>
-        <linearGradient id="copper" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#5a2c12" /><stop offset=".28" stopColor="#c47a3c" /><stop offset=".42" stopColor="#f1b77a" /><stop offset=".6" stopColor="#b8692f" /><stop offset="1" stopColor="#4a220d" />
-        </linearGradient>
-        <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#3b1f0c" /><stop offset=".3" stopColor="#7a4521" /><stop offset=".45" stopColor="#a1643a" /><stop offset=".65" stopColor="#6e3c1b" /><stop offset="1" stopColor="#331a09" />
-        </linearGradient>
-        <linearGradient id="gatta" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#5a3416" /><stop offset=".5" stopColor="#b07a48" /><stop offset="1" stopColor="#4a2a10" /></linearGradient>
-        <pattern id="braid" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#5a3a1c" /><path d="M0 8 L4 0 L8 8" fill="none" stroke="#2a180a" strokeWidth="1.4" /></pattern>
-        <radialGradient id="cloth" cx="50%" cy="40%" r="60%"><stop offset="0" stopColor="#9b2c2c" /><stop offset="1" stopColor="#4a1010" /></radialGradient>
+        <radialGradient id="skinHead" cx="46%" cy="42%" r="62%"><stop offset="0" stopColor="#f6e6c6" /><stop offset=".75" stopColor="#e2c899" /><stop offset="1" stopColor="#c9a873" /></radialGradient>
+        <radialGradient id="kinar" cx="50%" cy="50%" r="50%"><stop offset=".78" stopColor="#dcc192" /><stop offset=".9" stopColor="#efdcb4" /><stop offset="1" stopColor="#c4a26c" /></radialGradient>
+        <radialGradient id="syahiG" cx="40%" cy="36%" r="68%"><stop offset="0" stopColor="#4a4a52" /><stop offset=".55" stopColor="#18181c" /><stop offset="1" stopColor="#060607" /></radialGradient>
+        <radialGradient id="copperTop" cx="42%" cy="38%" r="62%"><stop offset=".7" stopColor="#d8904e" /><stop offset=".86" stopColor="#f3c08a" /><stop offset="1" stopColor="#6a3214" /></radialGradient>
+        <radialGradient id="woodTop" cx="45%" cy="40%" r="60%"><stop offset=".72" stopColor="#8a4f27" /><stop offset=".9" stopColor="#a8693c" /><stop offset="1" stopColor="#3e1f0b" /></radialGradient>
+        <linearGradient id="gatta" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#5a3416" /><stop offset=".5" stopColor="#c08a55" /><stop offset="1" stopColor="#4a2a10" /></linearGradient>
+        <pattern id="braid" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#6b4520" /><rect width="3.5" height="7" fill="#3e2510" /></pattern>
+        <radialGradient id="cloth" cx="50%" cy="50%" r="50%"><stop offset=".7" stopColor="#7a1c1c" /><stop offset=".85" stopColor="#a83232" /><stop offset="1" stopColor="#3f0c0c" /></radialGradient>
+        <filter id="leather" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4" result="n" />
+          <feColorMatrix in="n" type="matrix" values="0 0 0 0 .35  0 0 0 0 .25  0 0 0 0 .15  0 0 0 .22 0" result="t" />
+          <feComposite in="t" in2="SourceGraphic" operator="in" result="tex" />
+          <feMerge><feMergeNode in="SourceGraphic" /><feMergeNode in="tex" /></feMerge>
+        </filter>
         <linearGradient id="skin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#c98d66" /><stop offset=".5" stopColor="#e7b48e" /><stop offset="1" stopColor="#b97d58" /></linearGradient>
         <linearGradient id="skinHi" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#d99c74" /><stop offset=".5" stopColor="#f6c9a4" /><stop offset="1" stopColor="#c98d66" /></linearGradient>
       </defs>
       <style>{`
         .hand-strike { animation: handStrike .5s ease-out forwards; }
-        @keyframes handStrike { 0% { opacity: 0; transform: translateY(-18px); } 18% { opacity: 1; transform: translateY(0); } 60% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+        @keyframes handStrike { 0% { opacity: 0; transform: translateY(14px) scale(1.08); } 18% { opacity: 1; transform: translateY(0) scale(1); } 60% { opacity: 1; } 100% { opacity: 0; transform: translateY(8px); } }
         .ripple { animation: ripple .5s ease-out forwards; transform-box: fill-box; transform-origin: center; }
-        @keyframes ripple { from { opacity: .9; transform: scale(.2); } to { opacity: 0; transform: scale(2.4); } }
+        @keyframes ripple { from { opacity: .9; transform: scale(.2); } to { opacity: 0; transform: scale(2.6); } }
       `}</style>
 
-      {/* ===== 左：バーヤーン（銅の釜形の胴） ===== */}
-      <ellipse cx={B.cx} cy={276} rx={78} ry={16} fill="url(#cloth)" />
-      <path d={`M ${B.cx - B.rx} ${B.cy} C ${B.cx - B.rx - 22} ${B.cy + 70}, ${B.cx - 70} 266, ${B.cx} 268 C ${B.cx + 70} 266, ${B.cx + B.rx + 22} ${B.cy + 70}, ${B.cx + B.rx} ${B.cy} Z`} fill="url(#copper)" />
-      <path d={`M ${B.cx - 60} ${B.cy + 40} Q ${B.cx - 70} ${B.cy + 95} ${B.cx - 30} ${B.cy + 130}`} stroke="#ffd9a8" strokeOpacity={0.35} strokeWidth={6} fill="none" strokeLinecap="round" />
-      {straps(B.cx, B.cy, B.rx, B.ry, 262, 52, 11, 18)}
-      <ellipse cx={B.cx} cy={B.cy} rx={B.rx + 4} ry={B.ry + 3} fill="url(#braid)" />
-      {zone('ge', ell(B, B.rx - 4, B.ry - 3), 'url(#skinHead)')}
-      {zone('ke', BS, 'url(#syahi)')}
-      {lit('ge') && pulse(ell(B, B.rx - 2, B.ry - 1))}
-      {lit('ke') && pulse(ell(BS, BS.rx + 3, BS.ry + 2))}
-      {label(88, 140, 'Ge', 'ゲー', true, 15)}
+      {/* ===== 左：バーヤーン（真上から：銅の胴がふくらんで、皮のまわりに見える） ===== */}
+      <circle cx={B.cx} cy={B.cy} r={110} fill="url(#cloth)" />
+      <circle cx={B.cx} cy={B.cy} r={102} fill="url(#copperTop)" />
+      <circle cx={B.cx} cy={B.cy} r={102} fill="none" stroke="#3a1a08" strokeWidth={1.5} />
+      {radial(B.cx, B.cy, B.r + 6, 100, 16, 3.2)}
+      <circle cx={B.cx} cy={B.cy} r={B.r + 7} fill="url(#braid)" />
+      {zone('ge', circ(B, B.r), 'url(#skinHead)', { filter: 'url(#leather)' })}
+      <circle cx={B.cx} cy={B.cy} r={B.r - 1} fill="none" stroke="#b08a56" strokeWidth={1} pointerEvents="none" />
+      {zone('ke', BS, 'url(#syahiG)')}
+      {syahi(BS.cx, BS.cy, BS.r)}
+      {lit('ge') && pulse(circ(B, B.r + 2))}
+      {lit('ke') && pulse(circ(BS, BS.r + 3))}
+      {label(84, 150, 'Ge', 'ゲー', true, 16)}
       {label(BS.cx, BS.cy + 1, 'Ke', 'ケ', false, 11)}
 
-      {/* ===== 右：ダーヤーン（木の胴・革ひも・木の調律ブロック） ===== */}
-      <ellipse cx={D.cx} cy={276} rx={70} ry={15} fill="url(#cloth)" />
-      <path d={`M ${D.cx - D.rx} ${D.cy} L ${D.cx - 88} 260 Q ${D.cx} 284 ${D.cx + 88} 260 L ${D.cx + D.rx} ${D.cy} Z`} fill="url(#wood)" />
-      {straps(D.cx, D.cy, D.rx, D.ry, 252, 86, 13, 2)}
-      {Array.from({ length: 7 }, (_, i) => { // ガッタ（音程を調整する木の円柱）
-        const a = Math.PI * (0.12 + (0.76 * i) / 6), x = D.cx - Math.cos(a) * 84, y = 212 + Math.sin(a) * 12;
-        return <rect key={i} x={x - 7} y={y - 16} width={14} height={30} rx={5} fill="url(#gatta)" stroke="#2a1606" strokeWidth={0.8} pointerEvents="none" />;
+      {/* ===== 右：ダーヤーン（真上から：下に広がる木の胴・革ひも・ガッタが皮のまわりに見える） ===== */}
+      <circle cx={D.cx} cy={D.cy} r={100} fill="url(#cloth)" />
+      <circle cx={D.cx} cy={D.cy} r={93} fill="url(#woodTop)" />
+      <circle cx={D.cx} cy={D.cy} r={93} fill="none" stroke="#2a1406" strokeWidth={1.5} />
+      {radial(D.cx, D.cy, D.r + 5, 92, 24, 2.4)}
+      {Array.from({ length: 8 }, (_, i) => { // ガッタ（音程を調整する木の円柱）
+        const a = ((i + 0.5) / 8) * Math.PI * 2, x = D.cx + Math.cos(a) * 84, y = D.cy + Math.sin(a) * 84;
+        return <rect key={i} x={x - 6} y={y - 9} width={12} height={18} rx={4} fill="url(#gatta)" stroke="#2a1606" strokeWidth={0.8} transform={`rotate(${(a * 180) / Math.PI + 90} ${x} ${y})`} pointerEvents="none" />;
       })}
-      <ellipse cx={D.cx} cy={D.cy} rx={D.rx + 4} ry={D.ry + 3} fill="url(#braid)" />
-      {zone('na', ell(D, D.rx - 3, D.ry - 2), 'url(#kinar)', { stroke: '#a4855a', strokeWidth: 1 })}
-      {zone('tin', ell(D, D.rx - 16, D.ry - 8), 'url(#skinHead)')}
-      {zone('te', ell(D, 34, 15), 'url(#syahi)')}
-      {zone('tun', ell(D, 12, 5.5), '#24242a', { stroke: '#6b6b74', strokeWidth: 0.8 })}
-      {lit('na') && pulse(ell(D, D.rx, D.ry))}
-      {lit('tin') && pulse(ell(D, D.rx - 14, D.ry - 7))}
-      {(lit('te') || lit('re')) && pulse(ell(D, 36, 16))}
-      {lit('tun') && pulse(ell(D, 14, 6.5))}
-      {label(D.cx, D.cy - D.ry + 13, 'Na', 'ナー', true, 12)}
-      {label(D.cx + 48, D.cy + 4, 'Tin', 'ティン', true, 11)}
-      {label(D.cx - 18, D.cy - 1, 'Te', 'テ', false, 10)}
-      {label(D.cx + 12, D.cy + 25, 'Tun', '中央', true, 8.5)}
+      <circle cx={D.cx} cy={D.cy} r={D.r + 6} fill="url(#braid)" />
+      {zone('na', circ(D, D.r), 'url(#kinar)', { filter: 'url(#leather)' })}
+      <circle cx={D.cx} cy={D.cy} r={D.r - 12} fill="none" stroke="#a88456" strokeWidth={1.2} pointerEvents="none" />
+      {zone('tin', circ(D, D.r - 13), 'url(#skinHead)', { filter: 'url(#leather)' })}
+      {zone('te', circ(D, 29), 'url(#syahiG)')}
+      {syahi(D.cx, D.cy, 29)}
+      {zone('tun', circ(D, 10), '#1c1c21', { stroke: '#5f5f68', strokeWidth: 0.8 })}
+      {lit('na') && pulse(circ(D, D.r + 2))}
+      {lit('tin') && pulse(circ(D, D.r - 15))}
+      {(lit('te') || lit('re')) && pulse(circ(D, 31))}
+      {lit('tun') && pulse(circ(D, 12))}
+      {label(D.cx, D.cy - D.r + 9, 'Na', 'ナー', true, 10.5)}
+      {label(D.cx + 43, D.cy + 2, 'Tin', 'ティン', true, 11)}
+      {label(D.cx - 13, D.cy - 9, 'Te', 'テ', false, 9.5)}
+      {label(D.cx, D.cy + 42, 'Tun = 中央', 'トゥン', true, 8)}
 
       {/* 叩いた所の波紋と、叩いている手 */}
       {hits.map((h) => {
         const left = POSE[h.bol]?.left;
-        return <ellipse key={'r' + h.id} cx={h.x} cy={h.y} rx={left ? 26 : 20} ry={left ? 11 : 9} fill="none" stroke="#fff" strokeWidth={2} className="ripple" pointerEvents="none" />;
+        return <circle key={'r' + h.id} cx={h.x} cy={h.y} r={left ? 22 : 16} fill="none" stroke="#fff" strokeWidth={2} className="ripple" pointerEvents="none" />;
       })}
       {hits.map((h) => <Hand key={'h' + h.id} pose={POSE[h.bol]!} />)}
     </svg>
