@@ -1,7 +1,8 @@
 /**
- * Authentic Indian Classical Tabla Concert Repertoire
- * Enriched with actual legendary masterworks from major Gharanas (Punjab, Delhi, Benares, Farrukhabad)
- * and compositions played by masters like Ustad Zakir Hussain, Ustad Alla Rakha, Pandit Kishan Maharaj, and Ustad Gameh Khan.
+ * タブラーの代表的な作品形式の演奏例
+ * - ティーンタールのテーカは伝統的な形。それ以外は各流派のスタイルにならった「このアプリのオリジナル作曲」で、
+ *   特定の演奏家の録音や作品を再現したものではない。
+ * - どの曲も1周がちょうど16拍になるよう、拍の格子（グリッド）の上に並べてある（くり返してもサムがずれない）。
  */
 
 import { BolKey } from '../types/tabla';
@@ -40,15 +41,55 @@ export interface AutoPerformance {
   steps: PerformanceStep[];
 }
 
+
+// ---------------------------------------------------------------------------
+// 1拍ずつ書いた譜から、正確な長さの手順を作る
+//   beats: 1要素＝1拍。空白区切りで等分（"Dha Ge Te Te" は1拍に4つ）
+//   "S" はのばす（前の音の長さに足す）、"TRKT" は Ti-Re-Ki-Ta の4つ打ち
+// ---------------------------------------------------------------------------
+const TOK: Record<string, { bol: BolKey; label: string; dev: string; drum: 'dayan' | 'bayan' | 'both'; key: string }> = {
+  Dha: { bol: 'dha', label: 'Dha', dev: 'धा', drum: 'both', key: 'Space' },
+  DHA: { bol: 'dha', label: 'DHA!', dev: 'धा', drum: 'both', key: 'Space' },
+  Dhin: { bol: 'dhin', label: 'Dhin', dev: 'धिन्', drum: 'both', key: 'G' },
+  Ge: { bol: 'ge', label: 'Ge', dev: 'गे', drum: 'bayan', key: 'A' },
+  Ghe: { bol: 'meend', label: 'Ghe↑', dev: 'घे', drum: 'bayan', key: 'S' },
+  Ke: { bol: 'ke', label: 'Ke', dev: 'के', drum: 'bayan', key: 'D' },
+  Na: { bol: 'na', label: 'Na', dev: 'ना', drum: 'dayan', key: 'J' },
+  Ta: { bol: 'na', label: 'Ta', dev: 'ता', drum: 'dayan', key: 'J' },
+  Tin: { bol: 'tin', label: 'Tin', dev: 'तिन', drum: 'dayan', key: 'K' },
+  Te: { bol: 'te', label: 'Te', dev: 'ते', drum: 'dayan', key: ';' },
+  Ti: { bol: 'te', label: 'Ti', dev: 'ति', drum: 'dayan', key: ';' },
+  Re: { bol: 're', label: 'Re', dev: 'र', drum: 'dayan', key: 'U' },
+  Ki: { bol: 'ke', label: 'Ki', dev: 'कि', drum: 'bayan', key: 'D' },
+};
+function fromBeats(bpm: number, beats: string[], khali: number[] = []): PerformanceStep[] {
+  const beatMs = 60000 / bpm, out: PerformanceStep[] = [];
+  beats.forEach((b, bi) => {
+    const toks = b.trim().split(/\s+/).flatMap((t) => (t === 'TRKT' ? ['Ti', 'Re', 'Ki', 'Te'] : [t]));
+    const d = beatMs / toks.length;
+    toks.forEach((t, k) => {
+      if (t === 'S') { if (out.length) out[out.length - 1].durationMs += d; return; }
+      const m = TOK[t];
+      out.push({
+        bol: m.bol, label: m.label, devanagari: m.dev, durationMs: d, drum: m.drum, shortcut: m.key,
+        ...(t === 'Ghe' ? { bend: 1.9 } : {}),
+        ...(bi === 0 && k === 0 ? { isSam: true, description: '第1拍 サム' } : {}),
+        ...(k === 0 && khali.includes(bi + 1) ? { isKhali: true, description: `第${bi + 1}拍 カーリー` } : {}),
+      });
+    });
+  });
+  return out;
+}
+
 export const AUTO_PERFORMANCES: AutoPerformance[] = [
   // =========================================================================
-  // 1. Punjab Gharana: Ustad Zakir Hussain & Alla Rakha Whirlwind Rela
+  // 1. パンジャーブ流派スタイルのレラ（オリジナル）
   // =========================================================================
   {
     id: 'punjab_rela_zakir',
-    title: 'Punjab Gharana Whirlwind Rela (Zakir Hussain Tradition)',
-    titleJa: 'パンジャーブ流派・電光石火の疾走レラ（ザキール・フセイン／アッラー・ラッカ直伝）',
-    masterArtist: 'Ustad Zakir Hussain & Ustad Alla Rakha',
+    title: 'Punjab-style Rela (app original)',
+    titleJa: 'パンジャーブ流派スタイルのレラ（高速の連打）',
+    masterArtist: 'パンジャーブ流派のスタイル（このアプリのオリジナル作曲）',
     gharana: 'パンジャーブ流派（Punjab Gharana）',
     compositionType: 'Rela',
     category: 'solo',
@@ -60,114 +101,27 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
     taalName: 'Teental Drut (高速16拍)',
     beatsCount: 16,
     description:
-      '世界最高峰のタブラ巨匠ウスタード・ザキール・フセインと、その父アッラー・ラッカが得意とするパンジャーブ流派の代名詞的レラ（Rela / 激流）。古代太鼓パッカワジ由来の開いた太い重低音「Dha-Ge」と、中指・人差し指の猛烈な回転「Te-Te」が機関銃のように疾走します。',
+      'レラ（激流）は、細かい音を途切れなく連ねる高速の曲。パンジャーブ流派は、開いた低音「Dha Ge」と、指を回すような「Te Te」の連打を得意とします。',
     structureNotes:
-      '【構成】前半8拍：有声（有低音 Dha-Ge-Te-Te）→ 後半8拍：無声から一気に加速して第1拍サム（Sam）へ雪崩れ込む伝統形式。',
+      '前半8拍：低音あり（Dha Ge Te Te）→ 後半8拍：9拍目から低音を抜き（Ta Ke Te Te）、13拍目で低音が戻ってサムへ。',
     learningPoint:
       '左手の「Ge」がリズムの骨格を支え、右手の「Te-Te」が流れるようなレガートを作る「左右交互打撃」の極致です。',
-    steps: [
-      // Beat 1 (Sam!)
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 192, drum: 'both', shortcut: 'Space', isSam: true, description: '第1拍 サム（開始）' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 192, drum: 'bayan', shortcut: 'A', description: 'パンジャーブ特有の開放低音' },
-      { bol: 'te', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: ';' },
-      { bol: 're', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: 'U' },
-
-      // Beat 2
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 192, drum: 'both', shortcut: 'Space' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 192, drum: 'bayan', shortcut: 'A' },
-      { bol: 'te', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: ';' },
-      { bol: 're', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: 'U' },
-
-      // Beat 3
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 192, drum: 'both', shortcut: 'Space' },
-      { bol: 'te', label: 'Ti', devanagari: 'ति', durationMs: 192, drum: 'dayan', shortcut: ';' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 192, drum: 'both', shortcut: 'Space' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 192, drum: 'bayan', shortcut: 'A' },
-
-      // Beat 4
-      { bol: 'na', label: 'Na', devanagari: 'ना', durationMs: 192, drum: 'dayan', shortcut: 'J' },
-      { bol: 'te', label: 'Ti', devanagari: 'ति', durationMs: 192, drum: 'dayan', shortcut: ';' },
-      { bol: 'ke', label: 'Ke', devanagari: 'के', durationMs: 192, drum: 'bayan', shortcut: 'D' },
-      { bol: 'na', label: 'Na', devanagari: 'ना', durationMs: 192, drum: 'dayan', shortcut: 'J' },
-
-      // Beat 5 (Tali 2)
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 192, drum: 'both', shortcut: 'Space' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 192, drum: 'bayan', shortcut: 'A' },
-      { bol: 'te', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: ';' },
-      { bol: 're', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: 'U' },
-
-      // Beat 6
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 192, drum: 'both', shortcut: 'Space' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 192, drum: 'bayan', shortcut: 'A' },
-      { bol: 'te', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: ';' },
-      { bol: 're', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: 'U' },
-
-      // Beat 7
-      { bol: 'ti_re_ki_ta', label: 'Tirekita', devanagari: 'तिरकिट', durationMs: 384, drum: 'both', shortcut: 'T', description: '電光石火の4連打' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 192, drum: 'both', shortcut: 'Space' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 192, drum: 'bayan', shortcut: 'A' },
-
-      // Beat 8
-      { bol: 'na', label: 'Na', devanagari: 'ना', durationMs: 192, drum: 'dayan', shortcut: 'J' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 192, drum: 'both', shortcut: 'Space' },
-      { bol: 'ti_re_ki_ta', label: 'Tirekita', devanagari: 'तिरकिट', durationMs: 384, drum: 'both', shortcut: 'T' },
-
-      // Beat 9 (Khali / 空拍)
-      { bol: 'te', label: 'Ta', devanagari: 'ता', durationMs: 192, drum: 'dayan', shortcut: ';', isKhali: true, description: '第9拍 カーリー（低音抜き）' },
-      { bol: 'ke', label: 'Ke', devanagari: 'के', durationMs: 192, drum: 'bayan', shortcut: 'D', isKhali: true },
-      { bol: 'te', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: ';', isKhali: true },
-      { bol: 're', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: 'U', isKhali: true },
-
-      // Beat 10
-      { bol: 'te', label: 'Ta', devanagari: 'ता', durationMs: 192, drum: 'dayan', shortcut: ';', isKhali: true },
-      { bol: 'ke', label: 'Ke', devanagari: 'के', durationMs: 192, drum: 'bayan', shortcut: 'D', isKhali: true },
-      { bol: 'te', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: ';', isKhali: true },
-      { bol: 're', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: 'U', isKhali: true },
-
-      // Beat 11
-      { bol: 'na', label: 'Ta', devanagari: 'ता', durationMs: 192, drum: 'dayan', shortcut: 'J', isKhali: true },
-      { bol: 'te', label: 'Ti', devanagari: 'ति', durationMs: 192, drum: 'dayan', shortcut: ';', isKhali: true },
-      { bol: 'na', label: 'Ta', devanagari: 'ता', durationMs: 192, drum: 'dayan', shortcut: 'J', isKhali: true },
-      { bol: 'ke', label: 'Ke', devanagari: 'के', durationMs: 192, drum: 'bayan', shortcut: 'D', isKhali: true },
-
-      // Beat 12
-      { bol: 'na', label: 'Na', devanagari: 'ना', durationMs: 192, drum: 'dayan', shortcut: 'J', isKhali: true },
-      { bol: 'tin', label: 'Tin', devanagari: 'तिन', durationMs: 192, drum: 'dayan', shortcut: 'K', isKhali: true },
-      { bol: 'ke', label: 'Ke', devanagari: 'के', durationMs: 192, drum: 'bayan', shortcut: 'D', isKhali: true },
-      { bol: 'na', label: 'Na', devanagari: 'ना', durationMs: 192, drum: 'dayan', shortcut: 'J', isKhali: true },
-
-      // Beat 13 (Tali 3 - 低音大復活)
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 192, drum: 'both', shortcut: 'Space', description: '第13拍 ターリー（低音が爆発的に復活！）' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 192, drum: 'bayan', shortcut: 'A' },
-      { bol: 'te', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: ';' },
-      { bol: 're', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: 'U' },
-
-      // Beat 14
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 192, drum: 'both', shortcut: 'Space' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 192, drum: 'bayan', shortcut: 'A' },
-      { bol: 'te', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: ';' },
-      { bol: 're', label: 'Te', devanagari: 'ते', durationMs: 192, drum: 'dayan', shortcut: 'U' },
-
-      // Beat 15
-      { bol: 'ti_re_ki_ta', label: 'Tirekita', devanagari: 'तिरकिट', durationMs: 384, drum: 'both', shortcut: 'T' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 192, drum: 'both', shortcut: 'Space' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 192, drum: 'bayan', shortcut: 'A' },
-
-      // Beat 16
-      { bol: 'na', label: 'Na', devanagari: 'ना', durationMs: 192, drum: 'dayan', shortcut: 'J' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 192, drum: 'both', shortcut: 'Space' },
-      { bol: 'ti_re_ki_ta', label: 'Tirekita', devanagari: 'तिरकिट', durationMs: 384, drum: 'both', shortcut: 'T', description: 'サムへ突入！' },
-    ],
+    steps: fromBeats(156, [
+      'Dha Ge Te Te', 'Dha Ge Te Te', 'Dha Ti Dha Ge', 'Na Ti Ke Na',
+      'Dha Ge Te Te', 'Dha Ge Te Te', 'TRKT', 'Tin Na Ke Na',
+      'Ta Ke Te Te', 'Ta Ke Te Te', 'Ta Ti Ta Ke', 'Na Ti Ke Na',
+      'Dha Ge Te Te', 'Dha Ge Te Te', 'TRKT', 'Dhin Na Ge Na',
+    ], [9]),
   },
 
   // =========================================================================
-  // 2. Delhi Gharana: Ustad Gameh Khan Authentic Foundation Kayda
+  // 2. デリー流派スタイルのカイダ（オリジナル）
   // =========================================================================
   {
     id: 'delhi_kayda_gameh',
-    title: 'Delhi Gharana Classical Foundation Kayda (Ustad Gameh Khan)',
-    titleJa: 'デリー流派・伝統基本カイダ（始祖ウスタード・ガメー・ハーン直伝）',
-    masterArtist: 'Ustad Gameh Khan (Dilli Gharana Master)',
+    title: 'Delhi-style Kayda (app original)',
+    titleJa: 'デリー流派スタイルのカイダ（主題と変奏）',
+    masterArtist: 'デリー流派のスタイル（このアプリのオリジナル作曲）',
     gharana: 'デリー流派（Dilli Gharana / 最古の流派）',
     compositionType: 'Kayda',
     category: 'solo',
@@ -240,13 +194,13 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
   },
 
   // =========================================================================
-  // 3. Benares Gharana: Pandit Kishan Maharaj Heavy Banarasi Tukra
+  // 3. ベナレス流派スタイルのトゥクラ（オリジナル）
   // =========================================================================
   {
     id: 'benares_tukra_kishan',
-    title: 'Benares Gharana Heavy Banarasi Tukra (Pt. Kishan Maharaj)',
-    titleJa: 'ベナレス流派・重戦車バナーラシー・トゥクラ（巨匠キシャン・マハラジ直伝）',
-    masterArtist: 'Pandit Kishan Maharaj & Pandit Kumar Bose',
+    title: 'Benares-style Tukra (app original)',
+    titleJa: 'ベナレス流派スタイルのトゥクラ（決めの曲）',
+    masterArtist: 'ベナレス流派のスタイル（このアプリのオリジナル作曲）',
     gharana: 'ベナレス流派（Benares Gharana / 聖地ワラナシ）',
     compositionType: 'Tukra',
     category: 'climax',
@@ -258,43 +212,17 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
     taalName: 'Teental (16拍)',
     beatsCount: 16,
     description:
-      'ガンジス川の聖地ベナレスで育まれた、全流派中もっとも豪快で大地を揺るがす重低音を持つ「トゥクラ（Tukra＝小品・劇的着地劇）」。左手バーヤーンを平手で大きく開き、深く手首を押し込むミィーンド（うねり）と、最後は寸分の狂いもなく第1拍（サム）へ炸裂する「ティハイ（3回反復）」で圧倒します。',
+      'トゥクラは1周期ほどの短い決めの曲。ベナレス流派らしい力強い低音とゲー↑（手首で音程を上げる）を使い、最後はティハーイーでサムに着地します。',
     structureNotes:
-      '【構成】前半：重厚な低音導入（Dha-Ge-Ti-Re-Ki-Ta）→ 後半：3回繰り返してピタリとSamに着地する数学的ティハイ。',
+      '1〜11拍：主題 → 12〜16拍：「TiReKiTa Dha」を3回くり返すティハーイー。3回目の Dha が次の周期の1拍目（サム）に重なる。',
     learningPoint:
       'ベナレス流派ならではの豪快な低音の共鳴と、最後の「Dha!」の劇的な瞬間を体感してください。',
-    steps: [
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 382, drum: 'both', shortcut: 'Space', isSam: true, description: '第1拍 重厚なサム' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 191, drum: 'bayan', shortcut: 'A' },
-      { bol: 'ti_re_ki_ta', label: 'Tirekita', devanagari: 'तिरकिट', durationMs: 382, drum: 'both', shortcut: 'T' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 382, drum: 'both', shortcut: 'Space' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 191, drum: 'bayan', shortcut: 'A' },
-
-      // Meend Slide
-      { bol: 'meend', label: 'Meend', devanagari: 'मींड', durationMs: 612, drum: 'bayan', shortcut: 'S', bend: 1.9, description: 'ベナレス特有の深い手首スライド' },
-      { bol: 'na', label: 'Na', devanagari: 'ना', durationMs: 306, drum: 'dayan', shortcut: 'J' },
-      { bol: 'ke', label: 'Ke', devanagari: 'के', durationMs: 306, drum: 'bayan', shortcut: 'D' },
-
-      // Rapid Roll
-      { bol: 'ti_re_ki_ta', label: 'Tirekita', devanagari: 'तिरकिट', durationMs: 306, drum: 'both', shortcut: 'T' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 306, drum: 'both', shortcut: 'Space' },
-      { bol: 'ti_re_ki_ta', label: 'Tirekita', devanagari: 'तिरकिट', durationMs: 306, drum: 'both', shortcut: 'T' },
-
-      // TIHAI 1st repetition
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 230, drum: 'both', shortcut: 'Space', description: 'ティハイ 1回目 (Tihai 1)' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 153, drum: 'bayan', shortcut: 'A' },
-      { bol: 'na', label: 'Na', devanagari: 'ना', durationMs: 230, drum: 'dayan', shortcut: 'J' },
-
-      // TIHAI 2nd repetition
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 230, drum: 'both', shortcut: 'Space', description: 'ティハイ 2回目 (Tihai 2)' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 153, drum: 'bayan', shortcut: 'A' },
-      { bol: 'na', label: 'Na', devanagari: 'ना', durationMs: 230, drum: 'dayan', shortcut: 'J' },
-
-      // TIHAI 3rd repetition (Leading straight to Sam)
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 230, drum: 'both', shortcut: 'Space', description: 'ティハイ 3回目 (Tihai 3)' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 153, drum: 'bayan', shortcut: 'A' },
-      { bol: 'na', label: 'Na', devanagari: 'ना', durationMs: 230, drum: 'dayan', shortcut: 'J', description: '次拍のSamへ完全着地！' },
-    ],
+    steps: fromBeats(98, [
+      'Dha Ge', 'TRKT', 'Dha Ge', 'Na Dha', 'Ghe S', 'Na Ke', 'TRKT', 'Dha S',
+      'Dha Ge', 'Na Ke', 'Dha S',
+      // ティハーイー：「TiReKiTa Dha」を3回。3回目の Dha が次の周期のサムに着地
+      'TRKT', 'Dha S', 'TRKT', 'Dha S', 'TRKT',
+    ]),
   },
 
   // =========================================================================
@@ -304,7 +232,7 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
     id: 'teental_theka',
     title: 'Teental Traditional Theka (Classical Foundation)',
     titleJa: 'ティンタール・伝統基本テーカ（北インド音楽の王道16拍）',
-    masterArtist: 'Classical Tradition of Hindustani Sangeet',
+    masterArtist: '伝統的な形（ティーンタールの標準的なテーカ）',
     gharana: '全流派共通（Sarva Gharana）',
     compositionType: 'Theka',
     category: 'theka',
@@ -345,13 +273,13 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
   },
 
   // =========================================================================
-  // 5. Farrukhabad Peshkar: Ustad Amir Hussain Khan Elegant Intro
+  // 5. ファルッカーバード流派スタイルのペシュカール（オリジナル）
   // =========================================================================
   {
     id: 'farrukhabad_peshkar',
-    title: 'Farrukhabad Poetic Peshkar (Ustad Amir Hussain Khan)',
-    titleJa: 'ファルカバード流派・優美なるペシュカール（ウスタード・アミール・フセイン・ハーン直伝）',
-    masterArtist: 'Ustad Amir Hussain Khan & Ustad Keramatullah Khan',
+    title: 'Farrukhabad-style Peshkar (app original)',
+    titleJa: 'ファルッカーバード流派スタイルのペシュカール（導入）',
+    masterArtist: 'ファルッカーバード流派のスタイル（このアプリのオリジナル作曲）',
     gharana: 'ファルカバード流派（Farrukhabad Gharana）',
     compositionType: 'Peshkar',
     category: 'groove',
@@ -363,45 +291,25 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
     taalName: 'Teental Vilambit (ゆったりとした16拍)',
     beatsCount: 16,
     description:
-      'タブラ独奏会（ソロ・リサイタル）の最初に必ず演奏される「ペシュカール（Peshkar＝披露・ご挨拶）」。急がず焦らず、深く呼吸するようにバーヤーンのミィーンドを響かせ、右手の澄んだ「Tin」と「Dha」を対話させる、最も詩的で優雅な形式です。',
+      'ペシュカールは独奏の幕開けに置かれる、ゆったりした即興的な曲。音と音の間（ま）を生かし、開放音を中心に空間を探るように始まります。',
     structureNotes:
-      '【特徴】ゆったりとした空間の美学（休符と余韻の響き）。',
+      '前半8拍：低音あり → 後半8拍：9拍目から低音を抜いて軽く（Tin・Ta）、13拍目で戻ってサムへ。',
     learningPoint:
       '音符の多さではなく、一打一打の余韻（サステイン）と手首の柔らかな圧力変化を味わってください。',
-    steps: [
-      { bol: 'dhin', label: 'Dhin', devanagari: 'धिन्', durationMs: 909, drum: 'both', shortcut: 'G', isSam: true, description: '第1拍 サム（深く染み入る響き）' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 454, drum: 'both', shortcut: 'Space' },
-      { bol: 'tin', label: 'Tin', devanagari: 'तिन', durationMs: 454, drum: 'dayan', shortcut: 'K' },
-
-      { bol: 'te', label: 'Ti', devanagari: 'ति', durationMs: 454, drum: 'dayan', shortcut: ';' },
-      { bol: 'te', label: 'Te', devanagari: 'ते', durationMs: 454, drum: 'dayan', shortcut: ';' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 909, drum: 'both', shortcut: 'Space' },
-
-      { bol: 'meend', label: 'Meend', devanagari: 'मींड', durationMs: 909, drum: 'bayan', shortcut: 'S', bend: 1.6, description: '第5拍 優美な手首のうねり' },
-      { bol: 'tin', label: 'Tin', devanagari: 'तिन', durationMs: 454, drum: 'dayan', shortcut: 'K' },
-      { bol: 'na', label: 'Na', devanagari: 'ना', durationMs: 454, drum: 'dayan', shortcut: 'J' },
-
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 909, drum: 'both', shortcut: 'Space' },
-      { bol: 'tin', label: 'Tin', devanagari: 'तिन', durationMs: 909, drum: 'dayan', shortcut: 'K', isKhali: true, description: '第9拍 カーリー（静寂）' },
-
-      { bol: 'te', label: 'Ta', devanagari: 'ता', durationMs: 454, drum: 'dayan', shortcut: ';', isKhali: true },
-      { bol: 'te', label: 'Te', devanagari: 'ते', durationMs: 454, drum: 'dayan', shortcut: ';', isKhali: true },
-      { bol: 'na', label: 'Ta', devanagari: 'ता', durationMs: 909, drum: 'dayan', shortcut: 'J', isKhali: true },
-
-      { bol: 'dhin', label: 'Dhin', devanagari: 'धिन्', durationMs: 909, drum: 'both', shortcut: 'G', description: '第13拍 ターリー（低音回帰）' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 454, drum: 'both', shortcut: 'Space' },
-      { bol: 'ti_re_ki_ta', label: 'Tirekita', devanagari: 'तिरकिट', durationMs: 454, drum: 'both', shortcut: 'T', description: 'サムへ' },
-    ],
+    steps: fromBeats(66, [
+      'Dhin S', 'Dha Dhin', 'Dha Dha', 'Tin S', 'Dha S', 'Ghe S', 'Dhin Dha', 'Tin Na',
+      'Tin S', 'Ta Tin', 'Ta Ta', 'Tin S', 'Dha S', 'TRKT', 'Dhin Dha', 'Dhin Na',
+    ], [9]),
   },
 
   // =========================================================================
-  // 6. Concert Climax: Ravi Shankar & Alla Rakha Sitar Jugalbandi Jhala & Chakradar
+  // 6. クライマックスとティハーイー（オリジナル）
   // =========================================================================
   {
     id: 'concert_climax_jhala',
-    title: 'Sitar & Tabla Jugalbandi Climax (Monterey Pop 1967 Live Tradition)',
-    titleJa: '白熱のシタール共演クライマックス・ジャーラー ＆ チャクラダール・ティハイ',
-    masterArtist: 'Pandit Ravi Shankar & Ustad Alla Rakha (Woodstock / Monterey Live)',
+    title: 'Climax with Tihai (app original)',
+    titleJa: 'クライマックスとティハーイー',
+    masterArtist: '演奏の終盤を想定した例（このアプリのオリジナル作曲）',
     gharana: 'マイハール＆パンジャーブ共演（Maihar-Punjab Jugalbandi）',
     compositionType: 'Jugalbandi',
     category: 'climax',
@@ -413,33 +321,16 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
     taalName: 'Teental Ati Drut (超高速16拍)',
     beatsCount: 16,
     description:
-      '1967年のモントレー・ポップ・フェスティバル等で全世界のロックファンを驚愕させた、シタール巨匠ラヴィ・シャンカルとタブラ巨匠アッラー・ラッカによる伝説のクライマックス（Jhala）。毎秒15打を超える超高速ロールと、3×3回反復して完璧に着地する「チャクラダール・ティハイ」の熱狂を完全再現しています。',
+      '演奏の最後の盛り上がりを想定した速い曲。Dha と TiReKiTa の連打で高まり、最後はティハーイーでサムに着地して締めくくります。',
     structureNotes:
-      '【頂点】高速連打から、3回反復×3セットの数学的カデンツァが決まり、大歓声とともに第1拍サムに着地します。',
+      '1〜12拍：Dha と TiReKiTa の連打 → 13〜16拍：「TiReKiTa DHA」を3回くり返すティハーイー。3回目の DHA が次の周期のサムに重なる。',
     learningPoint:
       '超高速の中でも一切崩れない左手と右手の同期（シンクロナイゼーション）を体感してください。',
-    steps: [
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 174, drum: 'both', shortcut: 'Space', isSam: true },
-      { bol: 'ti_re_ki_ta', label: 'Tirekita', devanagari: 'तिरकिट', durationMs: 174, drum: 'both', shortcut: 'T' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 174, drum: 'both', shortcut: 'Space' },
-      { bol: 'ti_re_ki_ta', label: 'Tirekita', devanagari: 'तिरकिट', durationMs: 174, drum: 'both', shortcut: 'T' },
-
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 174, drum: 'both', shortcut: 'Space' },
-      { bol: 'ge', label: 'Ge', devanagari: 'गे', durationMs: 174, drum: 'bayan', shortcut: 'A' },
-      { bol: 'na', label: 'Na', devanagari: 'ना', durationMs: 174, drum: 'dayan', shortcut: 'J' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 174, drum: 'both', shortcut: 'Space' },
-
-      { bol: 'ti_re_ki_ta', label: 'Tirekita', devanagari: 'तिरकिट', durationMs: 174, drum: 'both', shortcut: 'T' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 174, drum: 'both', shortcut: 'Space' },
-      { bol: 'ti_re_ki_ta', label: 'Tirekita', devanagari: 'तिरकिट', durationMs: 174, drum: 'both', shortcut: 'T' },
-      { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 174, drum: 'both', shortcut: 'Space' },
-
-      // Chakradar Tihai Sub-1
-      { bol: 'dha', label: 'DHA!', devanagari: 'धा', durationMs: 130, drum: 'both', shortcut: 'Space', description: 'チャクラダール 第1連' },
-      { bol: 'ti_re_ki_ta', label: 'Tirkita', devanagari: 'तिरकिट', durationMs: 130, drum: 'both', shortcut: 'T' },
-      { bol: 'dha', label: 'DHA!', devanagari: 'धा', durationMs: 130, drum: 'both', shortcut: 'Space', description: 'チャクラダール 第2連' },
-      { bol: 'ti_re_ki_ta', label: 'Tirkita', devanagari: 'तिरकिट', durationMs: 130, drum: 'both', shortcut: 'T' },
-      { bol: 'dha', label: 'DHA!', devanagari: 'धा', durationMs: 130, drum: 'both', shortcut: 'Space', description: 'チャクラダール 第3連（サムへ直撃！）' },
-    ],
+    steps: fromBeats(172, [
+      'Dha S Dha S', 'TRKT', 'Dha S Dha S', 'TRKT', 'Dha Ge Na Dha', 'TRKT', 'Dha Ge Na Dha', 'TRKT',
+      'Dha Ge Na Dha', 'TRKT', 'Dha Ge Na Dha', 'Dha S TRKT',
+      // ティハーイー：「TiReKiTa DHA」を3回。3回目の DHA が次の周期のサムに着地
+      'DHA S S S', 'TRKT', 'DHA S S S', 'TRKT',
+    ]),
   },
 ];

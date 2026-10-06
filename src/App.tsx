@@ -13,9 +13,15 @@ import { TablaVisualizer } from './components/TablaVisualizer';
 import { AutoPlayer } from './components/AutoPlayer';
 import { LearningHub } from './components/LearningHub';
 import { KeyboardGuideModal } from './components/KeyboardGuideModal';
+import { TaikoGame } from './components/TaikoGame';
+import { TaalPlayer } from './components/TaalPlayer';
+import { AcousticLab } from './components/AcousticLab';
+import { TheoryGuide } from './components/TheoryGuide';
+import { AnatomyAndTechnique } from './components/AnatomyAndTechnique';
+import { ClassroomGuide } from './components/ClassroomGuide';
 import { BolKey } from './types/tabla';
 
-type Tab = 'lesson' | 'play' | 'listen' | 'sitar' | 'more' | 'old-play' | 'old-auto' | 'old-learn';
+type Tab = 'lesson' | 'play' | 'listen' | 'sitar' | 'more' | 'old-play' | 'old-auto' | 'old-learn' | 'old-game' | 'old-taal' | 'old-lab' | 'old-theory' | 'old-anatomy' | 'old-teacher';
 
 const NAV: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'lesson', label: 'レッスン', icon: <GraduationCap className="w-6 h-6" /> },
@@ -53,17 +59,20 @@ export default function App() {
         {tab === 'sitar' && <SitarPanel />}
         {tab === 'more' && (
           <div className="h-full flex flex-col gap-2 p-4 max-w-md mx-auto w-full">
-            <div className="text-xs text-stone-500 mb-1">くわしい画面（上級者向け）</div>
-            {([
-              ['old-play', '🥁 くわしい演奏画面', '音源の切りかえ・手の形の表示など'],
-              ['old-auto', '🎼 巨匠の自動演奏（くわしい版）', '曲の解説・ガイドに合わせて叩く'],
-              ['old-learn', '📚 しくみと理論', '音の物理・ターラ・楽器の構造'],
-            ] as const).map(([id, t, d]) => (
-              <button key={id} onClick={() => setTab(id)} className="text-left rounded-2xl bg-stone-900 border border-stone-800 px-4 py-3.5">
-                <div className="font-bold text-stone-100">{t}</div><div className="text-xs text-stone-500">{d}</div>
-              </button>
-            ))}
-            <button onClick={() => setKeyGuide(true)} className="text-left rounded-2xl bg-stone-900 border border-stone-800 px-4 py-3.5 font-bold">⌨️ キー操作表</button>
+            <button onClick={() => setTab('old-game')} className="text-left rounded-2xl bg-amber-700/90 px-4 py-3 shadow-lg">
+              <div className="font-extrabold text-white">🎮 リズムゲーム</div><div className="text-xs text-amber-100">流れてくる音符に合わせて叩く</div>
+            </button>
+            <div className="text-xs text-stone-500 mt-1">くわしく学ぶ</div>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                ['old-taal', '🔄 ターラ再生'], ['old-theory', '📖 ボルと理論'], ['old-anatomy', '🖐 楽器と奏法'],
+                ['old-lab', '🔬 音の実験室'], ['old-learn', '📚 しくみ（総合）'], ['old-teacher', '👩‍🏫 先生向け'],
+                ['old-play', '🥁 くわしい演奏画面'], ['old-auto', '🎼 自動演奏（くわしい版）'],
+              ] as const).map(([id, t]) => (
+                <button key={id} onClick={() => setTab(id)} className="text-left rounded-xl bg-stone-900 border border-stone-800 px-3 py-3 font-bold text-sm text-stone-100">{t}</button>
+              ))}
+            </div>
+            <button onClick={() => setKeyGuide(true)} className="text-left rounded-xl bg-stone-900 border border-stone-800 px-3 py-3 font-bold text-sm">⌨️ キー操作表</button>
             <div className="mt-auto text-[11px] text-stone-600">タブラーの録音：mmiron（Freesound・CC0）</div>
           </div>
         )}
@@ -73,6 +82,12 @@ export default function App() {
             {tab === 'old-play' && <TablaVisualizer activeBolKey={null} />}
             {tab === 'old-auto' && <AutoPlayer onBolPlayed={onBol} />}
             {tab === 'old-learn' && <LearningHub initialSubTab="lessons" onPlayBol={onBol} onNavigateToSimulator={() => setTab('play')} />}
+            {tab === 'old-game' && <TaikoGame />}
+            {tab === 'old-taal' && <TaalPlayer onBolTriggered={onBol} />}
+            {tab === 'old-lab' && <AcousticLab />}
+            {tab === 'old-theory' && <TheoryGuide onPlayBol={onBol} onNavigateToAutoPlay={() => setTab('listen')} />}
+            {tab === 'old-anatomy' && <AnatomyAndTechnique onPlayBol={onBol} />}
+            {tab === 'old-teacher' && <ClassroomGuide onPlayBol={onBol} onSelectTab={(t) => setTab(t === 'simulator' ? 'play' : t === 'acoustics' ? 'old-lab' : t === 'taal' ? 'old-taal' : 'old-anatomy')} />}
           </div>
         )}
       </main>
