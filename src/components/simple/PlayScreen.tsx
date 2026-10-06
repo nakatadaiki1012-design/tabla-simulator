@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Settings, X } from 'lucide-react';
-import { Drums, BOL_LABEL } from './Drums';
+import { Drums, BOL_LABEL, BOL_ROMAN, BolText } from './Drums';
 import { tablaAudio } from '../../audio/tablaAudioEngine';
 import { BolKey } from '../../types/tabla';
 
@@ -42,14 +42,14 @@ export const PlayScreen: React.FC = () => {
   return (
     <div className="h-full flex flex-col p-3 gap-2 max-w-4xl mx-auto w-full relative">
       <div className="flex items-center justify-between">
-        <div className="text-3xl font-extrabold text-amber-400 h-10 min-w-24">{last ? BOL_LABEL[last] : ''}</div>
+        <div className="h-12 min-w-24 flex items-baseline gap-2">{last && <><span className="text-4xl font-extrabold text-amber-400">{BOL_ROMAN[last]}</span><span className="text-lg font-bold text-amber-200/70">{BOL_LABEL[last]}</span></>}</div>
         <button onClick={() => setSheet(true)} className="w-11 h-11 rounded-full bg-stone-800 flex items-center justify-center" aria-label="設定"><Settings className="w-5 h-5" /></button>
       </div>
       <div className="flex-1 min-h-0"><Drums onHit={onHit} /></div>
       <div className="grid grid-cols-4 gap-2 pb-1">
         {combos.map((b) => (
           <button key={b} onPointerDown={(e) => { e.preventDefault(); tablaAudio.playBol(b); onHit(b); }}
-            className="py-4 rounded-xl bg-stone-800 border border-stone-700 text-stone-100 font-extrabold text-base active:bg-amber-700">{BOL_LABEL[b]}</button>
+            className="py-2.5 rounded-xl bg-stone-800 border border-stone-700 text-stone-100 active:bg-amber-700"><BolText b={b} big /></button>
         ))}
       </div>
 
@@ -68,7 +68,7 @@ export const PlayScreen: React.FC = () => {
               </div>
               <input type="range" min={40} max={200} value={bpm} onChange={(e) => setBpm(+e.target.value)} className="w-full accent-amber-500" />
             </div>
-            <div className="text-[11px] text-stone-500">キーボード：A ゲー／D ケ／J ナー／K ティン／L トゥン／; テ／Space ダー</div>
+            <div className="text-[11px] text-stone-500">キーボード：A Ge／D Ke／J Na／K Tin／L Tun／; Te／Space Dha／G Dhin</div>
           </div>
         </div>
       )}

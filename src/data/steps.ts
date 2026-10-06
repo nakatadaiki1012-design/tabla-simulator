@@ -21,22 +21,22 @@ const s = (str: string) => str.split(' ') as BolKey[];
 
 export const UNITS: Unit[] = [
   { id: 'u1', name: 'はじめの音', icon: '🔔', badge: 'はじめの一打', badgeIcon: '🥉', steps: [
-    { id: 'u1s1', kind: 'tap', say: 'ナーを たたこう', hint: '右の太鼓の ふち（光っている所）', seq: s('na') },
-    { id: 'u1s2', kind: 'tap', say: 'ナーを 3回', seq: s('na na na') },
-    { id: 'u1s3', kind: 'tap', say: 'ティンを 2回', hint: 'ふちの内側。ナーより まるい音', seq: s('tin tin') },
-    { id: 'u1s4', kind: 'tap', say: 'ナー・ティンを こうごに', seq: s('na tin na tin') },
+    { id: 'u1s1', kind: 'tap', say: 'Na ナーを たたこう', hint: '右の太鼓の ふち（光っている所）', seq: s('na') },
+    { id: 'u1s2', kind: 'tap', say: 'Na ナーを 3回', seq: s('na na na') },
+    { id: 'u1s3', kind: 'tap', say: 'Tin ティンを 2回', hint: 'ふちの内側。ナーより まるい音', seq: s('tin tin') },
+    { id: 'u1s4', kind: 'tap', say: 'Na・Tin を こうごに', seq: s('na tin na tin') },
   ] },
   { id: 'u2', name: '左手の低音', icon: '🌊', badge: '低音マスター', badgeIcon: '🌊', steps: [
-    { id: 'u2s1', kind: 'tap', say: 'ゲーを 2回', hint: '左の大きい太鼓。ひびく低い音', seq: s('ge ge') },
-    { id: 'u2s2', kind: 'tap', say: 'ケを 2回', hint: '左の黒い所。ひびかない音', seq: s('ke ke') },
-    { id: 'u2s3', kind: 'tap', say: 'ゲー・ケを こうごに', seq: s('ge ke ge ke') },
-    { id: 'u2s4', kind: 'tap', say: '右のまん中 トゥン', hint: '右の太鼓の いちばん真ん中', seq: s('tun tun') },
+    { id: 'u2s1', kind: 'tap', say: 'Ge ゲーを 2回', hint: '左の大きい太鼓。ひびく低い音', seq: s('ge ge') },
+    { id: 'u2s2', kind: 'tap', say: 'Ke ケを 2回', hint: '左の黒い所。ひびかない音', seq: s('ke ke') },
+    { id: 'u2s3', kind: 'tap', say: 'Ge・Ke を こうごに', seq: s('ge ke ge ke') },
+    { id: 'u2s4', kind: 'tap', say: 'Tun トゥン（右のまん中）', hint: '右の太鼓の いちばん真ん中', seq: s('tun tun') },
   ] },
   { id: 'u3', name: '両手で', icon: '🙌', badge: '両手名人', badgeIcon: '🙌', steps: [
-    { id: 'u3s1', kind: 'tap', say: 'ダー＝ナー＋ゲー', hint: '2か所を同時に。下の「ダー」ボタンでもOK', seq: s('dha') },
-    { id: 'u3s2', kind: 'tap', say: 'ダーを 2回', seq: s('dha dha') },
-    { id: 'u3s3', kind: 'tap', say: 'ディン＝ティン＋ゲー', hint: '2か所を同時に。下の「ディン」ボタンでもOK', seq: s('dhin dhin') },
-    { id: 'u3s4', kind: 'tap', say: 'ダー ディン ディン ダー', seq: s('dha dhin dhin dha') },
+    { id: 'u3s1', kind: 'tap', say: 'Dha ダー ＝ Na＋Ge', hint: '2か所を同時に。下の「ダー」ボタンでもOK', seq: s('dha') },
+    { id: 'u3s2', kind: 'tap', say: 'Dha ダーを 2回', seq: s('dha dha') },
+    { id: 'u3s3', kind: 'tap', say: 'Dhin ディン ＝ Tin＋Ge', hint: '2か所を同時に。下の「ディン」ボタンでもOK', seq: s('dhin dhin') },
+    { id: 'u3s4', kind: 'tap', say: 'Dha Dhin Dhin Dha', seq: s('dha dhin dhin dha') },
   ] },
   { id: 'u4', name: '耳で聞く', icon: '👂', badge: '耳の達人', badgeIcon: '👂', steps: [
     { id: 'u4s1', kind: 'quiz', say: 'どっちの音？', options: s('na ge'), rounds: 3 },
@@ -44,13 +44,13 @@ export const UNITS: Unit[] = [
     { id: 'u4s3', kind: 'quiz', say: 'どの音？', options: s('dha na ge ke'), rounds: 5 },
   ] },
   { id: 'u5', name: 'リズム', icon: '⏱', badge: 'リズムキーパー', badgeIcon: '⏱', steps: [
-    { id: 'u5s1', kind: 'rhythm', say: '拍に合わせて ナー', hint: 'カウント4つのあと、光る拍で叩く', seq: s('na na na na'), bpm: 70 },
-    { id: 'u5s2', kind: 'rhythm', say: 'ダー ディン ディン ダー', seq: s('dha dhin dhin dha'), bpm: 70 },
+    { id: 'u5s1', kind: 'rhythm', say: '拍に合わせて Na', hint: 'カウント4つのあと、光る拍で叩く', seq: s('na na na na'), bpm: 70 },
+    { id: 'u5s2', kind: 'rhythm', say: 'Dha Dhin Dhin Dha', seq: s('dha dhin dhin dha'), bpm: 70 },
     { id: 'u5s3', kind: 'rhythm', say: '8拍 つづけて', seq: s('dha dhin dhin dha dha dhin dhin dha'), bpm: 80 },
   ] },
   { id: 'u6', name: 'ティーンタール', icon: '👑', badge: 'ターラ入門', badgeIcon: '👑', steps: [
     { id: 'u6s1', kind: 'sam', say: '1拍目（サム）で タップ', hint: '16拍で1周。赤い丸＝サム', bpm: 90, rounds: 3 },
-    { id: 'u6s2', kind: 'rhythm', say: '後半は 低音がぬける', hint: 'ディン→ティン、ダー→ナー', seq: s('dha tin tin na na dhin dhin dha'), bpm: 70 },
+    { id: 'u6s2', kind: 'rhythm', say: '後半は 低音がぬける', hint: 'Dhin→Tin、Dha→Na（ゲーを叩かない）', seq: s('dha tin tin na na dhin dhin dha'), bpm: 70 },
     { id: 'u6s3', kind: 'rhythm', say: '16拍 ぜんぶ', seq: s('dha dhin dhin dha dha dhin dhin dha dha tin tin na na dhin dhin dha'), bpm: 72 },
   ] },
 ];

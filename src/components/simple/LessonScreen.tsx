@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, HelpCircle, Play, RotateCcw, Volume2 } from 'lucide-react';
-import { Drums, BOL_LABEL, PARTS } from './Drums';
+import { Drums, PARTS, BolText } from './Drums';
 import { tablaAudio } from '../../audio/tablaAudioEngine';
 import { ensemble, ENSEMBLE_TAALS } from '../../audio/ensemble';
 import { BolKey } from '../../types/tabla';
@@ -176,8 +176,8 @@ const StepPlayer: React.FC<PlayerProps> = ({ unit, step, onExit, onNext, onClear
 const SeqChips: React.FC<{ seq: BolKey[]; at: number; marks?: (boolean | null)[] }> = ({ seq, at, marks }) => (
   <div className="flex flex-wrap justify-center gap-1.5">
     {seq.map((b, i) => (
-      <div key={i} className={`px-2.5 py-1.5 rounded-lg text-sm font-bold border ${marks && marks[i] === true ? 'bg-emerald-600 border-emerald-400 text-white' : marks && marks[i] === false ? 'bg-red-900 border-red-600 text-red-200' : i < at ? 'bg-amber-600/80 border-amber-500 text-white' : i === at ? 'bg-amber-300 border-amber-200 text-stone-950 scale-110' : 'bg-stone-800 border-stone-700 text-stone-400'}`}>
-        {BOL_LABEL[b]}
+      <div key={i} className={`px-2 py-1 rounded-lg border ${marks && marks[i] === true ? 'bg-emerald-600 border-emerald-400 text-white' : marks && marks[i] === false ? 'bg-red-900 border-red-600 text-red-200' : i < at ? 'bg-amber-600/80 border-amber-500 text-white' : i === at ? 'bg-amber-300 border-amber-200 text-stone-950 scale-110' : 'bg-stone-800 border-stone-700 text-stone-400'}`}>
+        <BolText b={b} />
       </div>
     ))}
   </div>
@@ -189,7 +189,7 @@ const ComboButtons: React.FC<{ seq: BolKey[]; onHit: (b: BolKey) => void }> = ({
     <div className="flex justify-center gap-3">
       {need.map((b) => (
         <button key={b} onPointerDown={(e) => { e.preventDefault(); tablaAudio.playBol(b); onHit(b); }}
-          className="min-w-24 px-5 py-3 rounded-xl bg-amber-700 text-white font-extrabold text-lg active:scale-95">{BOL_LABEL[b]}</button>
+          className="min-w-24 px-5 py-2 rounded-xl bg-amber-700 text-white active:scale-95"><BolText b={b} big /></button>
       ))}
     </div>
   );
@@ -325,7 +325,7 @@ const QuizGame: React.FC<{ step: Step; onDone: (s: number) => void; onMiss: () =
         {opts.map((b) => (
           <button key={b} onClick={() => choose(b)}
             className={`py-5 rounded-2xl text-xl font-extrabold border-2 transition-colors ${ok === b ? 'bg-emerald-600 border-emerald-400 text-white' : bad === b ? 'bg-red-900 border-red-600 text-red-100' : 'bg-stone-800 border-stone-700 text-stone-100'}`}>
-            {BOL_LABEL[b]}
+            <BolText b={b} big />
           </button>
         ))}
       </div>
