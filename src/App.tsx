@@ -13,7 +13,7 @@ import { TablaVisualizer } from './components/TablaVisualizer';
 import { AutoPlayer } from './components/AutoPlayer';
 import { LearningHub } from './components/LearningHub';
 import { KeyboardGuideModal } from './components/KeyboardGuideModal';
-import { TaikoGame } from './components/TaikoGame';
+import { GameScreen } from './components/simple/GameScreen';
 import { TaalPlayer } from './components/TaalPlayer';
 import { AcousticLab } from './components/AcousticLab';
 import { TheoryGuide } from './components/TheoryGuide';
@@ -21,7 +21,7 @@ import { AnatomyAndTechnique } from './components/AnatomyAndTechnique';
 import { ClassroomGuide } from './components/ClassroomGuide';
 import { BolKey } from './types/tabla';
 
-type Tab = 'lesson' | 'play' | 'listen' | 'sitar' | 'more' | 'old-play' | 'old-auto' | 'old-learn' | 'old-game' | 'old-taal' | 'old-lab' | 'old-theory' | 'old-anatomy' | 'old-teacher';
+type Tab = 'lesson' | 'play' | 'listen' | 'sitar' | 'more' | 'game' | 'old-play' | 'old-auto' | 'old-learn' | 'old-taal' | 'old-lab' | 'old-theory' | 'old-anatomy' | 'old-teacher';
 
 const NAV: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'lesson', label: 'レッスン', icon: <GraduationCap className="w-6 h-6" /> },
@@ -37,7 +37,7 @@ export default function App() {
   const [, setTriggered] = useState<BolKey | null>(null);
   const onBol = useCallback((b: BolKey) => setTriggered(b), []);
   const isOld = tab.startsWith('old-');
-  const navTab = isOld ? 'more' : tab;
+  const navTab = isOld || tab === 'game' ? 'more' : tab;
 
   return (
     <div className="h-[100dvh] bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-600 overflow-hidden">
@@ -57,10 +57,11 @@ export default function App() {
         {tab === 'play' && <PlayScreen />}
         {tab === 'listen' && <ListenScreen />}
         {tab === 'sitar' && <SitarPanel />}
+        {tab === 'game' && <GameScreen />}
         {tab === 'more' && (
           <div className="h-full flex flex-col gap-2 p-4 max-w-md mx-auto w-full">
-            <button onClick={() => setTab('old-game')} className="text-left rounded-2xl bg-amber-700/90 px-4 py-3 shadow-lg">
-              <div className="font-extrabold text-white">🎮 リズムゲーム</div><div className="text-xs text-amber-100">流れてくる音符に合わせて叩く</div>
+            <button onClick={() => setTab('game')} className="text-left rounded-2xl bg-amber-700/90 px-4 py-3 shadow-lg">
+              <div className="font-extrabold text-white">🎮 リズムゲーム</div><div className="text-xs text-amber-100">流れてくる音符に合わせて叩く・6曲</div>
             </button>
             <div className="text-xs text-stone-500 mt-1">くわしく学ぶ</div>
             <div className="grid grid-cols-2 gap-2">
@@ -82,7 +83,6 @@ export default function App() {
             {tab === 'old-play' && <TablaVisualizer activeBolKey={null} />}
             {tab === 'old-auto' && <AutoPlayer onBolPlayed={onBol} />}
             {tab === 'old-learn' && <LearningHub initialSubTab="lessons" onPlayBol={onBol} onNavigateToSimulator={() => setTab('play')} />}
-            {tab === 'old-game' && <TaikoGame />}
             {tab === 'old-taal' && <TaalPlayer onBolTriggered={onBol} />}
             {tab === 'old-lab' && <AcousticLab />}
             {tab === 'old-theory' && <TheoryGuide onPlayBol={onBol} onNavigateToAutoPlay={() => setTab('listen')} />}
