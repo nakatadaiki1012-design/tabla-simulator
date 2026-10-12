@@ -32,7 +32,7 @@ type HandShape = 'index' | 'two' | 'flat' | 'fingers';
 interface Pose { x: number; y: number; rot: number; shape: HandShape; left?: boolean }
 const POSE: Partial<Record<BolKey, Pose>> = {
   na: { x: 330, y: 54, rot: -10, shape: 'index' },          // 人差し指で縁（キナール）を弾く
-  tin: { x: 372, y: 96, rot: -30, shape: 'index' },        // 人差し指で中間（スール）
+  tin: { x: 370, y: 98, rot: 12, shape: 'index' },          // 人差し指で中間（スール）
   tun: { x: 330, y: 118, rot: -20, shape: 'index' },        // 人差し指で中央
   te: { x: 326, y: 116, rot: -10, shape: 'fingers' },       // 中指・薬指で中央を押さえる
   re: { x: 318, y: 110, rot: -28, shape: 'index' },         // 人差し指で黒い所を閉じて
@@ -41,36 +41,68 @@ const POSE: Partial<Record<BolKey, Pose>> = {
   ke: { x: 112, y: 122, rot: 10, shape: 'flat', left: true }, // 手のひらで押さえる
 };
 
+// ---- 手（手の甲を真上から見た形）。右手のローカル座標：人差し指の先が原点、手首は下 ----
+type F = 'I' | 'M' | 'R' | 'P' | 'T';
+const FING: Record<F, { bx: number; by: number; tx: number; ty: number; wb: number; wt: number }> = {
+  I: { bx: 0, by: 54, tx: 0, ty: 0, wb: 12.5, wt: 10 },
+  M: { bx: 13.5, by: 51, tx: 14, ty: -4, wb: 13, wt: 10.5 },
+  R: { bx: 26, by: 53, tx: 27.5, ty: 2, wb: 12, wt: 9.5 },
+  P: { bx: 37.5, by: 58, tx: 41, ty: 18, wb: 10, wt: 8 },
+  T: { bx: 4, by: 96, tx: -15, ty: 50, wb: 17, wt: 11 }, // 親指：手首の近くから人差し指の横へ
+};
+const EXT: Record<HandShape, F[]> = { index: ['I'], two: ['I', 'M'], fingers: ['I', 'M', 'R'], flat: ['I', 'M', 'R', 'P'] };
+const SKIN_LINE = '#9a6040';
+
+/** 先が細くなる指（爪・関節のしわ付き）。curl=曲げた指（短く見え、ナックルが出る） */
+const Finger: React.FC<{ f: F; curl?: boolean; hi?: boolean }> = ({ f, curl, hi }) => {
+  const g = FING[f];
+  const tx = curl ? g.bx + (g.tx - g.bx) * 0.3 : g.tx, ty = curl ? g.by + (g.ty - g.by) * 0.3 : g.ty;
+  const dx = tx - g.bx, dy = ty - g.by, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, px = -uy, py = ux;
+  const wt = curl ? g.wb * 0.95 : g.wt, r = wt / 2;
+  const p = (along: number, side: number) => `${(g.bx + ux * along + px * side).toFixed(1)} ${(g.by + uy * along + py * side).toFixed(1)}`;
+  const tipBase = L - r;
+  const d = `M ${p(0, -g.wb / 2)} L ${p(tipBase, -r)} A ${r} ${r} 0 0 1 ${p(tipBase, r)} L ${p(0, g.wb / 2)} Z`;
+  const crease = (at: number, w: number) => <path d={`M ${p(at, -w * 0.38)} Q ${p(at + 1.2, 0)} ${p(at, w * 0.38)}`} stroke={SKIN_LINE} strokeWidth={0.6} fill="none" opacity={0.55} />;
+  const nailC = { x: g.bx + ux * (L - wt * 0.62), y: g.by + uy * (L - wt * 0.62) };
+  const ang = (Math.atan2(uy, ux) * 180) / Math.PI;
+  return (
+    <g>
+      <path d={d} fill={hi ? 'url(#skinHi)' : 'url(#skin)'} stroke={SKIN_LINE} strokeWidth={0.8} />
+      {curl ? (
+        // 曲げた指：第2関節のふくらみ
+        <ellipse cx={g.bx + ux * (L - r * 0.9)} cy={g.by + uy * (L - r * 0.9)} rx={r * 0.55} ry={r * 0.75} transform={`rotate(${ang + 90} ${g.bx + ux * (L - r * 0.9)} ${g.by + uy * (L - r * 0.9)})`} fill="#f2c4a0" opacity={0.55} />
+      ) : (
+        <>
+          {crease(L * 0.36, (g.wb + wt) / 2)}
+          {crease(L * 0.66, g.wb)}
+          <ellipse cx={nailC.x} cy={nailC.y} rx={wt * 0.32} ry={wt * 0.48} transform={`rotate(${ang + 90} ${nailC.x} ${nailC.y})`} fill="url(#nail)" stroke="#c99a84" strokeWidth={0.5} />
+        </>
+      )}
+    </g>
+  );
+};
+
 const Hand: React.FC<{ pose: Pose }> = ({ pose }) => {
   const { x, y, rot, shape, left } = pose;
   const sx = left ? -1 : 1;
-  // ローカル座標：指先が原点、手は右下（左手は左下）へ伸びる
-  const finger = (dx: number, len: number, on: boolean) => (
-    <rect x={dx - 5.5} y={-4} width={11} height={len} rx={5.5} fill={on ? 'url(#skinHi)' : 'url(#skin)'} stroke="#8a5434" strokeWidth={0.8} />
-  );
+  const ext = EXT[shape];
+  // 手のひら（ケ）は手の中心を叩く場所に合わせる
+  const off = shape === 'flat' ? 'translate(-19 -74)' : '';
   return (
     <g transform={`translate(${x} ${y}) rotate(${rot}) scale(${sx} 1)`} pointerEvents="none">
       <g className="hand-strike">
-        {shape === 'flat' ? (
-          <>
-            <rect x={-38} y={-26} width={76} height={56} rx={24} fill="url(#skin)" stroke="#8a5434" strokeWidth={1} opacity={0.93} />
-            {[-24, -8, 8, 24].map((dx, i) => <rect key={i} x={dx - 6} y={-58} width={12} height={40} rx={6} fill="url(#skin)" stroke="#8a5434" strokeWidth={0.8} />)}
-          </>
-        ) : (
-          <>
-            {/* 曲げた指（薬指・小指など） */}
-            {shape !== 'fingers' && finger(24, 34, false)}
-            {finger(36, 28, false)}
-            {/* 叩く指 */}
-            {shape === 'index' && finger(0, 54, true)}
-            {shape === 'two' && <>{finger(0, 54, true)}{finger(13, 52, true)}</>}
-            {shape === 'fingers' && <>{finger(0, 52, true)}{finger(12, 50, true)}{finger(24, 46, true)}</>}
-            {shape === 'index' && finger(12, 40, false)}
-            {/* 手のひら・手首 */}
-            <rect x={-8} y={36} width={56} height={44} rx={18} fill="url(#skin)" stroke="#8a5434" strokeWidth={1} />
-            <rect x={4} y={70} width={36} height={40} rx={12} fill="url(#skin)" stroke="#8a5434" strokeWidth={1} opacity={0.9} />
-          </>
-        )}
+        <g transform={off} filter="url(#handShadow)">
+          {/* 腕・手首 */}
+          <path d="M 6 100 Q 19 96 33 100 Q 35 125 34 152 L 6 152 Q 4 125 6 100 Z" fill="url(#arm)" />
+          <Finger f="T" />
+          {/* 手の甲 */}
+          <path d="M -7 56 Q 4 48 18 49 Q 33 49 45 60 Q 47 74 41 88 Q 36 102 30 106 L 9 106 Q 0 100 -4 88 Q -9 72 -7 56 Z" fill="url(#skin)" stroke={SKIN_LINE} strokeWidth={0.9} />
+          {/* 手の甲の筋（腱）とナックル */}
+          {(['I', 'M', 'R', 'P'] as F[]).map((f) => <path key={f} d={`M ${FING[f].bx} ${FING[f].by + 4} Q ${FING[f].bx * 0.7 + 6} ${FING[f].by + 26} ${19 + (FING[f].bx - 19) * 0.25} 100`} stroke="#b07552" strokeWidth={0.7} fill="none" opacity={0.35} />)}
+          {(['I', 'M', 'R', 'P'] as F[]).filter((f) => !ext.includes(f)).map((f) => <Finger key={f} f={f} curl />)}
+          {ext.map((f) => <Finger key={f} f={f} hi />)}
+          {(['I', 'M', 'R', 'P'] as F[]).map((f) => <ellipse key={'k' + f} cx={FING[f].bx} cy={FING[f].by + 1} rx={4.2} ry={2.6} fill="#f6d0ae" opacity={0.6} />)}
+        </g>
       </g>
     </g>
   );
@@ -172,6 +204,9 @@ export const Drums: React.FC<Props> = ({ onHit, target = [], silent }) => {
           <feMerge><feMergeNode in="SourceGraphic" /><feMergeNode in="tex" /></feMerge>
         </filter>
         <linearGradient id="skin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#c98d66" /><stop offset=".5" stopColor="#e7b48e" /><stop offset="1" stopColor="#b97d58" /></linearGradient>
+        <linearGradient id="arm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d9a17a" /><stop offset="1" stopColor="#d9a17a" stopOpacity="0" /></linearGradient>
+        <radialGradient id="nail" cx="50%" cy="35%" r="70%"><stop offset="0" stopColor="#fbe8de" /><stop offset="1" stopColor="#e8c0ac" /></radialGradient>
+        <filter id="handShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="3" dy="5" stdDeviation="3" floodColor="#000" floodOpacity="0.38" /></filter>
         <linearGradient id="skinHi" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#d99c74" /><stop offset=".5" stopColor="#f6c9a4" /><stop offset="1" stopColor="#c98d66" /></linearGradient>
       </defs>
       <style>{`
