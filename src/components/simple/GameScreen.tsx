@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Play, RotateCcw } from 'lucide-react';
-import { Drums, BolText, BOL_ROMAN } from './Drums';
+import { Drums, BolText, BOL_ROMAN, strikeDrums } from './Drums';
 import { tablaAudio } from '../../audio/tablaAudioEngine';
 import { BolKey } from '../../types/tabla';
 
@@ -220,7 +220,7 @@ const Play1: React.FC<{ song: Song; slow: boolean; guide: boolean; onBack: () =>
       {hasBoth && (
         <div className="flex justify-center gap-3 pb-1">
           {(['dha', 'dhin'] as BolKey[]).map((b) => (
-            <button key={b} onPointerDown={(e) => { e.preventDefault(); tablaAudio.playBol(b); const c = tablaAudio.getContext(); onHit(b, c ? c.currentTime : 0); }}
+            <button key={b} onPointerDown={(e) => { e.preventDefault(); strikeDrums(b); }}
               className="min-w-24 px-5 py-2 rounded-xl bg-red-700 text-white active:scale-95"><BolText b={b} big /></button>
           ))}
         </div>

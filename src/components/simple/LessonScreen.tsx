@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, HelpCircle, Play, RotateCcw, Volume2 } from 'lucide-react';
-import { Drums, PARTS, BolText } from './Drums';
+import { Drums, PARTS, BolText, strikeDrums } from './Drums';
 import { tablaAudio } from '../../audio/tablaAudioEngine';
 import { ensemble, ENSEMBLE_TAALS } from '../../audio/ensemble';
 import { BolKey } from '../../types/tabla';
@@ -182,13 +182,13 @@ const SeqChips: React.FC<{ seq: BolKey[]; at: number; marks?: (boolean | null)[]
     ))}
   </div>
 );
-const ComboButtons: React.FC<{ seq: BolKey[]; onHit: (b: BolKey) => void }> = ({ seq, onHit }) => {
+const ComboButtons: React.FC<{ seq: BolKey[] }> = ({ seq }) => {
   const need = (['dha', 'dhin'] as BolKey[]).filter((b) => seq.includes(b));
   if (!need.length) return null;
   return (
     <div className="flex justify-center gap-3">
       {need.map((b) => (
-        <button key={b} onPointerDown={(e) => { e.preventDefault(); tablaAudio.playBol(b); onHit(b); }}
+        <button key={b} onPointerDown={(e) => { e.preventDefault(); strikeDrums(b); }}
           className="min-w-24 px-5 py-2 rounded-xl bg-amber-700 text-white active:scale-95"><BolText b={b} big /></button>
       ))}
     </div>
@@ -221,7 +221,7 @@ const TapGame: React.FC<{ step: Step; onDone: (s: number) => void; onMiss: () =>
   return (
     <>
       <div className="flex-1 min-h-0"><Drums onHit={onHit} target={at < seq.length ? [seq[at]] : []} /></div>
-      <div className="flex flex-col gap-2 pb-1"><SeqChips seq={seq} at={at} /><ComboButtons seq={seq} onHit={onHit} /></div>
+      <div className="flex flex-col gap-2 pb-1"><SeqChips seq={seq} at={at} /><ComboButtons seq={seq} /></div>
     </>
   );
 };
@@ -288,7 +288,7 @@ const RhythmGame: React.FC<{ step: Step; onDone: (s: number) => void; onRetry: (
         )}
         {phase === 'count' && <div className="absolute top-1 left-0 right-0 text-center text-amber-300 font-bold">カウント…</div>}
       </div>
-      <div className="flex flex-col gap-2 pb-1"><SeqChips seq={seq} at={phase === 'play' ? beat : -1} marks={marks} /><ComboButtons seq={seq} onHit={(b) => { const c = tablaAudio.getContext(); onHit(b, c ? c.currentTime : 0); }} /></div>
+      <div className="flex flex-col gap-2 pb-1"><SeqChips seq={seq} at={phase === 'play' ? beat : -1} marks={marks} /><ComboButtons seq={seq} /></div>
     </>
   );
 };

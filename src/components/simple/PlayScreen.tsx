@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Settings, X } from 'lucide-react';
-import { Drums, BOL_LABEL, BOL_ROMAN, BolText } from './Drums';
+import { Drums, BOL_LABEL, BOL_ROMAN, BolText, strikeDrums } from './Drums';
 import { tablaAudio } from '../../audio/tablaAudioEngine';
 import { BolKey } from '../../types/tabla';
 
@@ -48,7 +48,7 @@ export const PlayScreen: React.FC = () => {
       <div className="flex-1 min-h-0"><Drums onHit={onHit} /></div>
       <div className="grid grid-cols-4 gap-2 pb-1">
         {combos.map((b) => (
-          <button key={b} onPointerDown={(e) => { e.preventDefault(); tablaAudio.playBol(b); onHit(b); }}
+          <button key={b} onPointerDown={(e) => { e.preventDefault(); strikeDrums(b); }}
             className="py-2.5 rounded-xl bg-stone-800 border border-stone-700 text-stone-100 active:bg-amber-700"><BolText b={b} big /></button>
         ))}
       </div>

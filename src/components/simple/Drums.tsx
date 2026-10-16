@@ -108,6 +108,9 @@ const Hand: React.FC<{ pose: Pose }> = ({ pose }) => {
   );
 };
 
+/** 太鼓の外のボタン（Dha など）から叩く：音・手の動き・判定を太鼓をタップしたときと同じにする */
+export const strikeDrums = (bol: BolKey) => window.dispatchEvent(new CustomEvent<BolKey>('tabla-strike', { detail: bol }));
+
 interface Props {
   onHit?: (bol: BolKey, time: number) => void;
   target?: BolKey[]; // 光らせる打ち方
@@ -119,19 +122,24 @@ export const Drums: React.FC<Props> = ({ onHit, target = [], silent }) => {
   const seq = useRef(0);
   const onHitRef = useRef(onHit); onHitRef.current = onHit;
 
+  // 手を出す（同じ手＝右手／左手の前の手は消して、新しい手に置きかえる）
+  const showHands = (parts: BolKey[]) => {
+    const now = parts.map((p) => { const ps = POSE[p]!; return { id: ++seq.current, bol: p, x: ps.x, y: ps.y }; });
+    const sideOf = (b: BolKey) => !!POSE[b]?.left;
+    setHits((h) => [...h.filter((x) => !parts.some((p) => sideOf(p) === sideOf(x.bol))), ...now]);
+    const ids = now.map((n) => n.id);
+    window.setTimeout(() => setHits((h) => h.filter((x) => !ids.includes(x.id))), 520);
+  };
   const hit = (bol: BolKey) => {
     if (!silent) tablaAudio.playBol(bol);
     const ctx = tablaAudio.getContext();
     // 聞こえる音の遅れ（出力レイテンシ）を差し引いた「叩いた時刻」
     const t = ctx ? ctx.currentTime - ((ctx as AudioContext & { outputLatency?: number }).outputLatency || ctx.baseLatency || 0) : 0;
     onHitRef.current?.(bol, t);
-    const parts: BolKey[] = bol === 'ti_re_ki_ta' ? ['te'] : PARTS[bol] || [bol];
-    const now = parts.map((p) => { const ps = POSE[p]!; return { id: ++seq.current, bol: p, x: ps.x, y: ps.y }; });
-    // 同じ手（右手／左手）の前の手は消して、新しい手に置きかえる
-    const sideOf = (b: BolKey) => !!POSE[b]?.left;
-    setHits((h) => [...h.filter((x) => !parts.some((p) => sideOf(p) === sideOf(x.bol))), ...now]);
-    const ids = now.map((n) => n.id);
-    window.setTimeout(() => setHits((h) => h.filter((x) => !ids.includes(x.id))), 520);
+    if (bol === 'ti_re_ki_ta') {
+      // Ti・Re・Ki・Ta を音と同じ間隔（0.07秒）で順番に見せる
+      (['te', 're', 'ke', 'te'] as BolKey[]).forEach((p, i) => window.setTimeout(() => showHands([p]), i * 70));
+    } else showHands(PARTS[bol] || [bol]);
   };
   const hitRef = useRef(hit); hitRef.current = hit;
 
@@ -144,8 +152,10 @@ export const Drums: React.FC<Props> = ({ onHit, target = [], silent }) => {
       e.preventDefault();
       hitRef.current(bol);
     };
+    const st = (e: Event) => hitRef.current((e as CustomEvent<BolKey>).detail);
     window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
+    window.addEventListener('tabla-strike', st);
+    return () => { window.removeEventListener('keydown', h); window.removeEventListener('tabla-strike', st); };
   }, []);
 
   const lit = (b: BolKey) => target.includes(b) || target.some((t) => (PARTS[t] || []).includes(b) || (t === 'meend' && b === 'ge'));
