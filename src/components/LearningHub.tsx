@@ -329,9 +329,9 @@ export const LearningHub: React.FC<Props> = ({
                 </p>
                 <p>
                   しかしタブラの中央には、鉄粉・煤・米糊を同心円状に塗り重ねた重り<strong>「シャヒ」</strong>があります。
-                  1920年にノーベル物理学賞受賞者C.V.ラマンが解明した通り、この緻密な荷重によって膜の倍音比が
-                  <strong className="text-amber-300">「1 : 2 : 3 : 4 : 5」の完全な整数次倍音</strong>
-                  へと補正されます。世界で唯一、打楽器でありながら弦楽器や管楽器と同じ澄んだピッチ感を持つ秘密がここにあります。
+                  1930年にノーベル物理学賞を受けたC.V.ラマンが1920〜30年代の研究で示したように、この緻密な荷重によって膜の倍音比が
+                  <strong className="text-amber-300">ほぼ「1 : 2 : 3 : 4 : 5」の整数比（調和倍音）</strong>
+                  へと補正されます。ムリダンガムなどと並び、打楽器でありながら明確な音程（ピッチ）を持つ珍しい太鼓である秘密がここにあります。
                 </p>
               </div>
 
@@ -580,7 +580,7 @@ export const LearningHub: React.FC<Props> = ({
                       <span className="text-[10px] font-mono opacity-80">#{b.matra}</span>
                       <span className="text-xs sm:text-sm font-black">{b.text}</span>
                       <span className="text-[9px] px-1 rounded font-bold whitespace-nowrap">
-                        {isSam ? '★ Sam' : isKhali ? '波 (Khali)' : isTali ? '拍 (Tali)' : '·'}
+                        {isSam && isKhali ? '★ Sam（Khali）' : isSam ? '★ Sam' : isKhali ? '波 (Khali)' : isTali ? '拍 (Tali)' : '·'}
                       </span>
                     </div>
                   );

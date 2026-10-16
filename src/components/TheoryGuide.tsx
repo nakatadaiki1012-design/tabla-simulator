@@ -35,7 +35,7 @@ export const TheoryGuide: React.FC<Props> = ({ onPlayBol, onNavigateToAutoPlay }
             </h2>
           </div>
           <p className="text-sm text-stone-400 leading-relaxed max-w-3xl">
-            タブラーは単なる直感的な打楽器ではなく、数千年に及ぶ高度な「言葉の体系」「音響の合体則」「陰陽の拍子理論」に基づいています。
+            タブラーは単なる直感的な打楽器ではなく、インドの長い太鼓の伝統を受け継いだ（今の形になったのは18世紀ごろ）高度な「言葉の体系」「音響の合体則」「陰陽の拍子理論」に基づいています。
             学校の音楽の授業でも直感的に理解できるよう、4大セオリーを体験型シミュレーションで解説します。
           </p>
         </div>
@@ -100,7 +100,7 @@ export const TheoryGuide: React.FC<Props> = ({ onPlayBol, onNavigateToAutoPlay }
 
             <div className="text-sm text-stone-300 leading-relaxed space-y-3">
               <p>
-                西洋音楽のドラマーは「五線譜」を見て叩きますが、伝統的なインド音楽では楽譜を使いません。
+                西洋音楽のドラマーは「五線譜」を見て叩きますが、伝統的なインド音楽では、主に楽譜ではなく口承（ボルを口で唱える）で伝えます。
                 その代わりに、太鼓から出るすべての音色に固有の音声言語（音象徴）が割り当てられており、これを
                 <strong className="text-amber-400">「ボル（Bol / 言葉）」</strong>と呼びます。
               </p>
@@ -191,8 +191,8 @@ export const TheoryGuide: React.FC<Props> = ({ onPlayBol, onNavigateToAutoPlay }
               </div>
               <p>
                 <strong>言語学的な驚き：</strong>
-                日本語でも「カ」に濁点を付けると「ガ」になるように、サンスクリット語でも無声音（Ta）に低音（有声の喉の響き Ge）が加わることで、
-                有声音（Dha）へと濁音化します。太鼓の音響物理と言語の音声学が完全に一致しているのです！
+                日本語で「タ」に濁点を付けると「ダ」になるのに似て、Dha は「有声・有気音」の字で書かれ、
+                低音（Ge）が加わった重い響きを言葉でうまく表しています。言葉と音のイメージが近いので覚えやすいのです。
               </p>
             </div>
 
@@ -286,14 +286,14 @@ export const TheoryGuide: React.FC<Props> = ({ onPlayBol, onNavigateToAutoPlay }
                   </div>
                   <p className="text-xs text-stone-300 leading-relaxed">
                     手を叩かず、手のひらを外に向けて「スーッ」と振るセクション。
-                    なんと<strong className="text-white">左手の低音が完全にカット</strong>され、
-                    右手のみの「Tin」「Ta」という乾いた静寂が訪れます。
+                    多くのターラ（特にティーンタール）では<strong className="text-white">左手の響く低音を抜き</strong>、
+                    「Tin」「Ta」のような軽い音になります（ティーンタールでは第10〜13拍）。
                   </p>
                 </div>
               </div>
               <p>
                 カーリーで低音を失うことによって聴衆に「緊張感」を与え、
-                次の拍で低音が爆発して第1拍「サム（Sam）」に着地したときの感動を何十倍にも増幅させる仕掛けです。
+                そのあと低音が戻って（ティーンタールでは第14拍から）第1拍「サム（Sam）」へ向かうときの高まりを生む仕掛けです。
               </p>
             </div>
           </div>
@@ -312,13 +312,13 @@ export const TheoryGuide: React.FC<Props> = ({ onPlayBol, onNavigateToAutoPlay }
             <div className="text-sm text-stone-300 leading-relaxed space-y-3">
               <p>
                 インド古典音楽のコンサートで、演奏が終わった瞬間に聴衆が「ワーッ！」と立ち上がって拍手喝采する場面があります。
-                その99%は<strong className="text-amber-400">「ティハイ（Tihai）」</strong>が決まった瞬間です。
+                その多くは<strong className="text-amber-400">「ティハイ（Tihai）」</strong>が決まってサムに着地した瞬間です。
               </p>
               <p>
                 ティハイとは、まったく同じリズムフレーズを寸分違わず「3回」繰り返し、
                 3回目の最後の1音が、16拍や10拍の周期の
                 <strong className="text-amber-400">「第1拍サム（Sam）」</strong>
-                に1ミリのズレもなく完璧に着地する数学的カデンツァです。
+                にぴたりと着地する終わり方です（間を空けない形や、サム以外に着地させる形もあります）。
               </p>
 
               {/* Mathematical Formula Diagram */}

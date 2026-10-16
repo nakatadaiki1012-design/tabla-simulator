@@ -272,7 +272,7 @@ export const TaalPlayer: React.FC<Props> = ({ onBolTriggered }) => {
 
                   {/* Gesture Label */}
                   <div className="text-[9px] opacity-80 whitespace-nowrap">
-                    {isSam ? 'サム (X)' : isClap ? 'ターリー' : isWave ? 'カーリー (0)' : '・'}
+                    {isSam && isWave ? 'サム（カーリー 0）' : isSam ? 'サム (X)' : isClap ? 'ターリー' : isWave ? 'カーリー (0)' : '・'}
                   </div>
                 </div>
               );

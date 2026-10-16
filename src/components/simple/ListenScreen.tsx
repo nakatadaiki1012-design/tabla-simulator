@@ -6,7 +6,7 @@ import { tablaAudio } from '../../audio/tablaAudioEngine';
 const TYPE: Record<AutoPerformance['compositionType'], { name: string; icon: string }> = {
   Theka: { name: 'テーカ（基本の型）', icon: '🔁' }, Kayda: { name: 'カイダ（主題と変奏）', icon: '🧩' },
   Rela: { name: 'レラ（高速の連打）', icon: '⚡' }, Tukra: { name: 'トゥクラ（決めの曲）', icon: '🎯' },
-  Peshkar: { name: 'ペシュカール（導入）', icon: '🌅' }, Tihai: { name: 'ティハーイー', icon: '3️⃣' }, Jugalbandi: { name: 'ジャーラー（クライマックス）', icon: '🔥' },
+  Peshkar: { name: 'ペシュカール（導入）', icon: '🌅' }, Tihai: { name: 'ティハーイーで終わる', icon: '🔥' }, Jugalbandi: { name: 'ジュガルバンディ（掛け合い）', icon: '🤝' },
 };
 const LEVEL: Record<AutoPerformance['difficulty'], number> = { 初級: 1, 中級: 2, 上級: 3, 師範級: 4 };
 const shortGharana = (g: string) => g.replace(/（.*$/, '');

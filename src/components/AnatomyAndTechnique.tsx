@@ -29,7 +29,7 @@ export const AnatomyAndTechnique: React.FC<Props> = ({ onPlayBol }) => {
           </h2>
         </div>
         <p className="text-sm text-stone-400 mt-1.5 leading-relaxed">
-          なぜ数千年にわたり、この2つの太鼓は現在の形に進化してきたのか？
+          インドの長い太鼓の伝統から、なぜこの2つの太鼓は今の形（18世紀ごろ）になったのか？
           3層に重なる山羊皮「プリー（Puri）」の断面構造、鉄粉を塗り重ねた「シャヒ」、そして口承で受け継がれるリズム言語「ボル（Bol）」の全貌を解説します。
         </p>
       </div>
@@ -119,7 +119,7 @@ export const AnatomyAndTechnique: React.FC<Props> = ({ onPlayBol }) => {
 
           <p className="text-xs text-stone-400 text-center max-w-2xl mt-2 leading-relaxed">
             打面（プリー）は1枚の皮ではなく、外枠を支える補強リング皮（キナール）と、土台となる山羊皮（マイダン）、
-            そしてその中央に職人が数週間かけて鉄粉と米粉を何十層も塗り重ねた「シャヒ」の複合構造によって、唯一無二の音色を生み出しています。
+            そしてその中央に職人が鉄粉入りのペーストを何層も塗り重ねて磨いた「シャヒ」の複合構造によって、独特の音色を生み出しています。
           </p>
         </div>
 
@@ -148,7 +148,7 @@ export const AnatomyAndTechnique: React.FC<Props> = ({ onPlayBol }) => {
               インド打楽器の音象徴言語「ボル（Bol）」全集
             </h3>
             <p className="text-xs text-stone-400 mt-0.5">
-              タブラー奏者は楽譜を使わず、すべての太鼓の音を「言葉（ボル）」として口で歌いながら演奏・伝承します。
+              タブラーは主に楽譜ではなく口承で伝えられ、奏者はすべての太鼓の音を「言葉（ボル）」として口で歌いながら演奏・伝承します。
             </p>
           </div>
         </div>

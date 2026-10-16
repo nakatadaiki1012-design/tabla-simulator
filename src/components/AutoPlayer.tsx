@@ -511,7 +511,7 @@ export const AutoPlayer: React.FC<Props> = ({ onBolPlayed }) => {
                 流派：{activePerformance.gharana}
               </span>
               <span className="text-[11px] px-2 py-0.5 rounded bg-sky-950/80 text-sky-300 border border-sky-800 font-semibold">
-                実演伝承：{activePerformance.masterArtist}
+                スタイル：{activePerformance.masterArtist}
               </span>
               <span className="text-[11px] px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800 font-semibold">
                 形式：{activePerformance.compositionType}

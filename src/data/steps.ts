@@ -50,7 +50,7 @@ export const UNITS: Unit[] = [
   ] },
   { id: 'u6', name: 'ティーンタール', icon: '👑', badge: 'ターラ入門', badgeIcon: '👑', steps: [
     { id: 'u6s1', kind: 'sam', say: '1拍目（サム）で タップ', hint: '16拍で1周。赤い丸＝サム', bpm: 90, rounds: 3 },
-    { id: 'u6s2', kind: 'rhythm', say: '後半は 低音がぬける', hint: 'Dhin→Tin、Dha→Na（ゲーを叩かない）', seq: s('dha tin tin na na dhin dhin dha'), bpm: 70 },
+    { id: 'u6s2', kind: 'rhythm', say: '10拍目から 低音がぬける', hint: 'Dhin→Tin、Dha→Na（ゲーを叩かない）。14拍目で もどる', seq: s('dha tin tin na na dhin dhin dha'), bpm: 70 },
     { id: 'u6s3', kind: 'rhythm', say: '16拍 ぜんぶ', seq: s('dha dhin dhin dha dha dhin dhin dha dha tin tin na na dhin dhin dha'), bpm: 72 },
   ] },
 ];
