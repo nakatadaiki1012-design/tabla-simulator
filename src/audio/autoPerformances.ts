@@ -133,11 +133,11 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
     taalName: 'Teental (16拍: 4+4+4+4)',
     beatsCount: 16,
     description:
-      'タブラ発祥の地デリー流派において、すべての修行僧が最初に徹底的に叩き込まれる「カイダ（Kaida＝基本法則）」。人差し指と中指の2本指だけを使い、キナール（外縁）の澄んだベル音「Na」とシャヒ消音「Ti-Te」を幾何学的に展開する、最も格調高い古典名作です。',
+      'カイダ（Kaida＝きまり）は、短い主題をもとに組み替え（変奏）をしていく曲。デリー流派はタブラーの最も古い流派とされ、右手は主に人差し指と中指で、縁（キナール）の澄んだ「Na」と、黒い所を閉じて打つ「Ti」を細かく使い分けます。主題の前半は低音あり、後半は低音を抜いた形（カーリー）で、最後の4拍で低音が戻ります。',
     structureNotes:
       '【主題】Dha-Ti-Dha-Ti | Dha-Dha-Ti-Na | Dha-Ti-Dha-Ti | Dha-Ge-Na-Tin。後半はカーリー（空拍）で反転する完璧なシンメトリー構造。',
     learningPoint:
-      '手首を動かさず指先だけのスナップで打つデリー流派特有のクリスプな粒立ちを聴き取ってください。',
+      '前半（1〜8拍）と後半（9〜16拍）が「低音あり／なし」で鏡のようになっている形を聴き取ってください。',
     steps: [
       // Beat 1 (Sam)
       { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 250, drum: 'both', shortcut: 'Space', isSam: true },
@@ -244,11 +244,11 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
     taalName: 'Teental (16拍: 4+4+4+4)',
     beatsCount: 16,
     description:
-      '全インド音楽の基礎。前半は豊かな低音（Dha/Dhin）、第9拍カーリーで低音を抜いた静寂（Tin/Ta）、そして第1拍サムへの回帰を体感できます。',
+      '北インド古典音楽で最もよく使われるターラ。前半は低音の入った Dha/Dhin、第9拍（カーリー）からの区切りでは低音を抜いた Tin/Ta、第13拍から低音が戻り、次の第1拍（サム）へ向かいます。',
     structureNotes:
       '【拍手構造】第1拍サム（拍手）/ 第5拍ターリー（拍手）/ 第9拍カーリー（空拍・手振り）/ 第13拍ターリー（拍手）。',
     learningPoint:
-      '第9拍で左手の低音（Ge）が消えて「Tin Tin Ta」になる対称構造（有音と無音の対比）に注目してください。',
+      '第9拍は Dha のまま、第10〜13拍で左手の低音（Ge）が抜けて「Tin Tin Ta Ta」になります。手拍子では第9拍を「手を振る（カーリー）」で数えます。',
     steps: [
       { bol: 'dha', label: 'Dha', devanagari: 'धा', durationMs: 750, drum: 'both', shortcut: 'Space', isSam: true, description: '第1拍 サム（開始と最大の到達点）' },
       { bol: 'dhin', label: 'Dhin', devanagari: 'धिन्', durationMs: 750, drum: 'both', shortcut: 'G', description: '第2拍 柔らかな両手打法' },
@@ -310,11 +310,11 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
     title: 'Climax with Tihai (app original)',
     titleJa: 'クライマックスとティハーイー',
     masterArtist: '演奏の終盤を想定した例（このアプリのオリジナル作曲）',
-    gharana: 'マイハール＆パンジャーブ共演（Maihar-Punjab Jugalbandi）',
-    compositionType: 'Jugalbandi',
+    gharana: '流派を問わない（演奏の終わり方の例）',
+    compositionType: 'Tihai',
     category: 'climax',
     categoryJa: '白熱の頂点（クライマックス）',
-    genre: '世界を熱狂させた伝説のインド音楽コンサート終盤',
+    genre: '演奏の終盤（速いテンポで盛り上げて終わる）',
     difficulty: '師範級',
     tempoName: '超高速ドルット（172 BPM）',
     defaultBpm: 172,
@@ -323,12 +323,12 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
     description:
       '演奏の最後の盛り上がりを想定した速い曲。Dha と TiReKiTa の連打で高まり、最後はティハーイーでサムに着地して締めくくります。',
     structureNotes:
-      '1〜12拍：Dha と TiReKiTa の連打 → 13〜16拍：「TiReKiTa DHA」を3回くり返すティハーイー。3回目の DHA が次の周期のサムに重なる。',
+      '1〜11拍：Dha と TiReKiTa の連打 → 12〜16拍：「TiReKiTa DHA」を3回くり返すティハーイー（それぞれ2拍ずつ・同じ間隔）。3回目の DHA が次の周期のサムに重なる。',
     learningPoint:
       '超高速の中でも一切崩れない左手と右手の同期（シンクロナイゼーション）を体感してください。',
     steps: fromBeats(172, [
       'Dha S Dha S', 'TRKT', 'Dha S Dha S', 'TRKT', 'Dha Ge Na Dha', 'TRKT', 'Dha Ge Na Dha', 'TRKT',
-      'Dha Ge Na Dha', 'TRKT', 'Dha Ge Na Dha', 'Dha S TRKT',
+      'Dha Ge Na Dha', 'TRKT', 'Dha Ge Na Dha', 'TRKT',
       // ティハーイー：「TiReKiTa DHA」を3回。3回目の DHA が次の周期のサムに着地
       'DHA S S S', 'TRKT', 'DHA S S S', 'TRKT',
     ]),

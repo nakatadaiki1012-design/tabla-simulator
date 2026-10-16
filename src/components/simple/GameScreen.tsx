@@ -25,8 +25,9 @@ const SONGS: Song[] = [
   { id: 'g4', name: 'ケヘルワ', sub: '8拍・おどる', level: 2, bpm: 100, loops: 3, beats: 'dha ge na tin na ke dhin na'.split(' ') },
   { id: 'g5', name: 'カイダ', sub: '1拍に2つ', level: 3, bpm: 72, loops: 2,
     beats: ['dha dha', 'te te', 'dha dha', 'tin na', 'ta ta', 'te te', 'dha dha', 'dhin na'] },
-  { id: 'g6', name: 'ティハイ', sub: '3回くり返して着地', level: 3, bpm: 80, loops: 2,
-    beats: ['dha te', 'te dha', '-', 'dha te', 'te dha', '-', 'dha te', 'te dha'] },
+  // 8拍のテーカのあと「Te Te Dha」を同じ間隔で3回。3回目の Dha が次の1拍目（サム）にぴたりと来る
+  { id: 'g6', name: 'ティハイ', sub: '3回くり返してサムに着地', level: 3, bpm: 80, loops: 1,
+    beats: ['dha', 'dhin', 'dhin', 'dha', 'dha', 'dhin', 'dhin', 'dha', 'dha', 'te te', 'dha', '-', 'te te', 'dha', '-', 'te te', 'dha'] },
 ];
 
 interface Note { t: number; bol: BolKey; side: Side; state: null | 'great' | 'good' | 'miss'; err: number; part: Set<Side> }

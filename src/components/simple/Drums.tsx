@@ -34,7 +34,7 @@ const POSE: Partial<Record<BolKey, Pose>> = {
   na: { x: 330, y: 54, rot: -10, shape: 'index' },          // 人差し指で縁（キナール）を弾く
   tin: { x: 370, y: 98, rot: 12, shape: 'index' },          // 人差し指で中間（スール）
   tun: { x: 330, y: 118, rot: -20, shape: 'index' },        // 人差し指で中央
-  te: { x: 326, y: 116, rot: -10, shape: 'fingers' },       // 中指・薬指で中央を押さえる
+  te: { x: 326, y: 116, rot: -10, shape: 'fingers' },       // 中指・薬指・小指をそろえて中央を閉じて打つ
   re: { x: 318, y: 110, rot: -28, shape: 'index' },         // 人差し指で黒い所を閉じて
   ge: { x: 88, y: 136, rot: 20, shape: 'two', left: true }, // 中指・人差し指で弾き、手首は縁に
   meend: { x: 88, y: 136, rot: 20, shape: 'two', left: true },
@@ -50,7 +50,7 @@ const FING: Record<F, { bx: number; by: number; tx: number; ty: number; wb: numb
   P: { bx: 37.5, by: 58, tx: 41, ty: 18, wb: 10, wt: 8 },
   T: { bx: 4, by: 96, tx: -15, ty: 50, wb: 17, wt: 11 }, // 親指：手首の近くから人差し指の横へ
 };
-const EXT: Record<HandShape, F[]> = { index: ['I'], two: ['I', 'M'], fingers: ['I', 'M', 'R'], flat: ['I', 'M', 'R', 'P'] };
+const EXT: Record<HandShape, F[]> = { index: ['I'], two: ['I', 'M'], fingers: ['M', 'R', 'P'], flat: ['I', 'M', 'R', 'P'] };
 const SKIN_LINE = '#9a6040';
 
 /** 先が細くなる指（爪・関節のしわ付き）。curl=曲げた指（短く見え、ナックルが出る） */
@@ -86,8 +86,8 @@ const Hand: React.FC<{ pose: Pose }> = ({ pose }) => {
   const { x, y, rot, shape, left } = pose;
   const sx = left ? -1 : 1;
   const ext = EXT[shape];
-  // 手のひら（ケ）は手の中心を叩く場所に合わせる
-  const off = shape === 'flat' ? 'translate(-19 -74)' : '';
+  // 手のひら（ケ）は手の中心、テは中指の先を、叩く場所に合わせる
+  const off = shape === 'flat' ? 'translate(-19 -74)' : shape === 'fingers' ? 'translate(-15 6)' : '';
   return (
     <g transform={`translate(${x} ${y}) rotate(${rot}) scale(${sx} 1)`} pointerEvents="none">
       <g className="hand-strike">
