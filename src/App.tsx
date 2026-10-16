@@ -24,15 +24,15 @@ import { BolKey } from './types/tabla';
 type Tab = 'lesson' | 'play' | 'listen' | 'sitar' | 'more' | 'game' | 'old-play' | 'old-auto' | 'old-learn' | 'old-taal' | 'old-lab' | 'old-theory' | 'old-anatomy' | 'old-teacher';
 
 const NAV: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'lesson', label: 'レッスン', icon: <GraduationCap className="w-6 h-6" /> },
   { id: 'play', label: 'たたく', icon: <Drum className="w-6 h-6" /> },
+  { id: 'lesson', label: 'レッスン', icon: <GraduationCap className="w-6 h-6" /> },
   { id: 'listen', label: 'きく', icon: <Headphones className="w-6 h-6" /> },
   { id: 'sitar', label: 'シタール', icon: <Music2 className="w-6 h-6" /> },
   { id: 'more', label: 'その他', icon: <Menu className="w-6 h-6" /> },
 ];
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>('lesson');
+  const [tab, setTab] = useState<Tab>('play');
   const [keyGuide, setKeyGuide] = useState(false);
   const [, setTriggered] = useState<BolKey | null>(null);
   const onBol = useCallback((b: BolKey) => setTriggered(b), []);
@@ -43,7 +43,7 @@ export default function App() {
     <div className="h-[100dvh] bg-stone-950 text-stone-100 flex flex-col land:flex-row font-sans selection:bg-amber-600 overflow-hidden">
       {/* 上：ロゴと（PCでは）メニュー */}
       <header className="h-12 shrink-0 land:hidden flex items-center justify-between px-4 border-b border-stone-800 bg-stone-950">
-        <button onClick={() => setTab('lesson')} className="font-extrabold text-lg flex items-center gap-1.5"><span>🪘</span>TablaLab</button>
+        <button onClick={() => setTab('play')} className="font-extrabold text-lg flex items-center gap-1.5"><span>🪘</span>TablaLab</button>
         <nav className="hidden md:flex items-center gap-1">
           {NAV.map((n) => (
             <button key={n.id} onClick={() => setTab(n.id)} className={`px-3 py-1.5 rounded-lg text-sm font-bold ${navTab === n.id ? 'bg-amber-600 text-white' : 'text-stone-400 hover:text-stone-100'}`}>{n.label}</button>

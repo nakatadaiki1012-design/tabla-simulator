@@ -4,6 +4,15 @@ import { Drums, BOL_LABEL, BOL_ROMAN, BolText, strikeDrums } from './Drums';
 import { tablaAudio } from '../../audio/tablaAudioEngine';
 import { BolKey } from '../../types/tabla';
 
+type ButtonSet = 'combo' | 'single' | 'all';
+const SET_KEY = 'tablalab.play.buttons';
+const SINGLE: BolKey[] = ['na', 'tin', 'tun', 'te', 're', 'ge', 'ke', 'meend'];
+const COMBO: BolKey[] = ['dha', 'dhin', 'ti_re_ki_ta', 'meend'];
+const BUTTON_SETS: Record<ButtonSet, { label: string; bols: BolKey[] }> = {
+  combo: { label: '両手', bols: COMBO },
+  single: { label: 'ひとつずつ', bols: SINGLE },
+  all: { label: 'ぜんぶ', bols: ['dha', 'dhin', 'ti_re_ki_ta', 'na', 'tin', 'tun', 'te', 're', 'ge', 'ke', 'meend'] },
+};
 const KEYS = [{ l: 'C', hz: 261.63 }, { l: 'C#', hz: 277.18 }, { l: 'D', hz: 293.66 }, { l: 'D#', hz: 311.13 }, { l: 'E', hz: 329.63 }];
 
 /** 叩く：太鼓だけの画面。設定は⚙の中 */
@@ -37,20 +46,31 @@ export const PlayScreen: React.FC = () => {
   }, [metro]);
 
   const onHit = (b: BolKey) => { setLast(b); if (tablaAudio.getContext()) tablaAudio.setRootNote(KEYS[key].hz); };
-  const combos: BolKey[] = ['dha', 'dhin', 'ti_re_ki_ta', 'meend'];
+  // 下のボタン：両手の合わせ技／ひとつずつ／ぜんぶ を切りかえ（この端末に覚えておく）
+  const [set, setSet] = useState<ButtonSet>(() => { try { return (localStorage.getItem(SET_KEY) as ButtonSet) || 'combo'; } catch { return 'combo'; } });
+  const chooseSet = (v: ButtonSet) => { setSet(v); try { localStorage.setItem(SET_KEY, v); } catch { /* noop */ } };
+  const buttons = BUTTON_SETS[set].bols;
+  const cols = buttons.length > 8 ? 'grid-cols-4 land:grid-cols-2' : buttons.length > 4 ? 'grid-cols-4 land:grid-cols-2' : 'grid-cols-4 land:grid-cols-1';
 
   return (
     <div className="h-full flex flex-col land:flex-row p-3 land:p-1 gap-2 max-w-4xl land:max-w-none mx-auto w-full relative">
-      <div className="flex items-center justify-between land:absolute land:left-2 land:right-32 land:top-1 land:z-10 land:pointer-events-none">
+      <div className="flex items-center justify-between land:absolute land:left-2 land:right-48 land:top-1 land:z-10 land:pointer-events-none">
         <div className="h-12 min-w-24 flex items-baseline gap-2">{last && <><span className="text-4xl font-extrabold text-amber-400">{BOL_ROMAN[last]}</span><span className="text-lg font-bold text-amber-200/70">{BOL_LABEL[last]}</span></>}</div>
         <button onClick={() => setSheet(true)} className="w-11 h-11 rounded-full bg-stone-800 flex items-center justify-center land:pointer-events-auto" aria-label="設定"><Settings className="w-5 h-5" /></button>
       </div>
       <div className="flex-1 min-h-0"><Drums onHit={onHit} /></div>
-      <div className="grid grid-cols-4 land:grid-cols-1 land:w-28 land:shrink-0 land:content-center gap-2 pb-1 land:pb-0">
-        {combos.map((b) => (
-          <button key={b} onPointerDown={(e) => { e.preventDefault(); strikeDrums(b); }}
-            className="py-2.5 rounded-xl bg-stone-800 border border-stone-700 text-stone-100 active:bg-amber-700"><BolText b={b} big /></button>
-        ))}
+      <div className={`flex flex-col gap-1.5 pb-1 land:pb-0 land:shrink-0 land:justify-center ${buttons.length > 4 ? 'land:w-44' : 'land:w-28'}`}>
+        <div className="flex justify-center gap-1">
+          {(Object.keys(BUTTON_SETS) as ButtonSet[]).map((k) => (
+            <button key={k} onClick={() => chooseSet(k)} className={`px-3 land:px-2 py-1 rounded-full text-xs land:text-[11px] font-bold whitespace-nowrap ${set === k ? 'bg-amber-600 text-white' : 'bg-stone-800 text-stone-400'}`}>{BUTTON_SETS[k].label}</button>
+          ))}
+        </div>
+        <div className={`grid ${cols} gap-1.5`}>
+          {buttons.map((b) => (
+            <button key={b} onPointerDown={(e) => { e.preventDefault(); strikeDrums(b); }}
+              className={`${buttons.length > 4 ? 'py-1.5' : 'py-2.5'} rounded-xl border text-stone-100 active:bg-amber-700 ${COMBO.includes(b) && b !== 'meend' ? 'bg-stone-800 border-amber-800/70' : 'bg-stone-800 border-stone-700'}`}><BolText b={b} big={buttons.length <= 4} /></button>
+          ))}
+        </div>
       </div>
 
       {sheet && (

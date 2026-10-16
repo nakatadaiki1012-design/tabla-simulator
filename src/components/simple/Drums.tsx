@@ -230,16 +230,76 @@ export const Drums: React.FC<Props> = ({ onHit, target = [], silent }) => {
   );
   const pulse = (c: C) => <circle {...c} fill="none" stroke="#fbbf24" strokeWidth={3.5} pointerEvents="none" className="animate-pulse" />;
   // 真上から見た革ひも（編んだ縁から外へ放射状にのびる）
-  const radial = (cx: number, cy: number, r1: number, r2: number, n: number, w = 3) =>
-    Array.from({ length: n }, (_, i) => {
-      const a = (i / n) * Math.PI * 2;
-      return <line key={i} x1={cx + Math.cos(a) * r1} y1={cy + Math.sin(a) * r1} x2={cx + Math.cos(a) * r2} y2={cy + Math.sin(a) * r2} stroke="#3a200d" strokeWidth={w} strokeLinecap="round" opacity={0.9} pointerEvents="none" />;
-    });
+  // ---- 本物らしく見せるための部品（すべて飾り：タップは下の zone が受ける） ----
+  const P2 = (cx: number, cy: number, r: number, a: number): [number, number] => [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+  // 縁の編み込み（ガジュラ）：ねじった革のひもが斜めに並ぶ
+  const braid = (cx: number, cy: number, r1: number, r2: number) => {
+    const rm = (r1 + r2) / 2, n = Math.round((2 * Math.PI * rm) / 3.6);
+    return (
+      <g pointerEvents="none">
+        <circle cx={cx} cy={cy} r={rm} fill="none" stroke="#2a170a" strokeWidth={r2 - r1 + 1} />
+        {Array.from({ length: n }, (_, i) => {
+          const a = (i / n) * Math.PI * 2, [x, y] = P2(cx, cy, rm, a), deg = (a * 180) / Math.PI;
+          return <ellipse key={i} cx={x} cy={y} rx={(r2 - r1) * 0.62} ry={1.9} transform={`rotate(${deg + 62} ${x} ${y})`} fill="url(#braidSeg)" stroke="#24130a" strokeWidth={0.35} />;
+        })}
+      </g>
+    );
+  };
+  // 革ひも（バッディー）：縁の穴から外へ。となり同士が V 字に寄って、その上にガッタが乗る
+  const straps = (cx: number, cy: number, r1: number, r2: number, n: number, w1: number, w2: number) => (
+    <g pointerEvents="none">
+      {Array.from({ length: n }, (_, i) => {
+        const a1 = (i / n) * Math.PI * 2, a2 = a1 + ((i % 2 ? -1 : 1) * Math.PI) / n * 0.82;
+        const [x1, y1] = P2(cx, cy, r1, a1), [x2, y2] = P2(cx, cy, r2, a2);
+        const ux = x2 - x1, uy = y2 - y1, L = Math.hypot(ux, uy), px = -uy / L, py = ux / L;
+        const d = `M ${x1 + px * w1} ${y1 + py * w1} L ${x2 + px * w2} ${y2 + py * w2} L ${x2 - px * w2} ${y2 - py * w2} L ${x1 - px * w1} ${y1 - py * w1} Z`;
+        return (
+          <g key={i}>
+            <path d={d} fill="#000" opacity={0.35} transform="translate(1.2 1.6)" />
+            <path d={d} fill="url(#strapG)" stroke="#1e1007" strokeWidth={0.5} />
+            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#c9945e" strokeWidth={0.5} opacity={0.5} />
+          </g>
+        );
+      })}
+    </g>
+  );
+  // ガッタ（音程を合わせる木の円柱）：ひもの V 字の上に、外向きに寝かせて置く
+  const gattas = (cx: number, cy: number, r: number, n: number) => (
+    <g pointerEvents="none">
+      {Array.from({ length: n }, (_, i) => {
+        const a = ((i + 0.25) / n) * Math.PI * 2, [x, y] = P2(cx, cy, r, a), deg = (a * 180) / Math.PI + 90;
+        return (
+          <g key={i} transform={`rotate(${deg} ${x} ${y})`}>
+            <rect x={x - 5.6} y={y - 10.5} width={11.2} height={21} rx={4.5} fill="#000" opacity={0.4} transform="translate(1.5 2)" />
+            <rect x={x - 5.6} y={y - 10.5} width={11.2} height={21} rx={4.5} fill="url(#gatta)" stroke="#2a1606" strokeWidth={0.7} />
+            {[-5, 0, 5].map((o) => <line key={o} x1={x - 4.6} y1={y + o} x2={x + 4.6} y2={y + o + 0.6} stroke="#3a210c" strokeWidth={0.35} opacity={0.5} />)}
+            <ellipse cx={x} cy={y - 9.3} rx={4.6} ry={1.6} fill="#d9a46c" stroke="#5a3314" strokeWidth={0.4} />
+            <ellipse cx={x} cy={y - 9.3} rx={2.4} ry={0.8} fill="none" stroke="#8a5a2c" strokeWidth={0.3} />
+          </g>
+        );
+      })}
+    </g>
+  );
+  // 太鼓を置く布のリング（ドーナツ形の座布団）：ふくらみとしわ
+  const cushion = (cx: number, cy: number, r1: number, r2: number) => (
+    <g pointerEvents="none">
+      <circle cx={cx + 2} cy={cy + 4} r={r2 + 1} fill="#000" opacity={0.45} filter="url(#soft)" />
+      <circle cx={cx} cy={cy} r={(r1 + r2) / 2} fill="none" stroke="url(#clothRing)" strokeWidth={r2 - r1} />
+      {Array.from({ length: 28 }, (_, i) => {
+        const a = (i / 28) * Math.PI * 2 + (i % 3) * 0.05, [x1, y1] = P2(cx, cy, r1 + 1, a), [x2, y2] = P2(cx, cy, r2 - 1, a + 0.05);
+        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#3a0808" strokeWidth={0.6} opacity={0.45} />;
+      })}
+    </g>
+  );
+  // 皮のふちにできる影（縁の編み込みが少し高いので）
+  const rimShade = (cx: number, cy: number, r: number) => <circle cx={cx} cy={cy} r={r} fill="url(#rimShade)" pointerEvents="none" />;
   // シャーヒー：何層にも塗り重ねた黒い円（同心円のすじ）とつや
   const syahi = (cx: number, cy: number, r: number) => (
     <g pointerEvents="none">
-      {[0.82, 0.62, 0.42].map((k, i) => <circle key={i} cx={cx} cy={cy} r={r * k} fill="none" stroke="#3a3a42" strokeWidth={0.7} opacity={0.8} />)}
-      <ellipse cx={cx - r * 0.32} cy={cy - r * 0.38} rx={r * 0.4} ry={r * 0.18} fill="#fff" opacity={0.13} transform={`rotate(-30 ${cx - r * 0.32} ${cy - r * 0.38})`} />
+      {Array.from({ length: 7 }, (_, i) => { const k = 0.95 - i * 0.12; return <circle key={i} cx={cx} cy={cy} r={r * k} fill="none" stroke={i % 2 ? '#2e2e35' : '#0a0a0c'} strokeWidth={r * 0.045} opacity={0.4} />; })}
+      <circle cx={cx} cy={cy} r={r + 0.6} fill="none" stroke="#6e5a3e" strokeWidth={1.1} opacity={0.55} />
+      <ellipse cx={cx - r * 0.3} cy={cy - r * 0.36} rx={r * 0.46} ry={r * 0.2} fill="url(#gloss)" transform={`rotate(-32 ${cx - r * 0.3} ${cy - r * 0.36})`} />
+      <ellipse cx={cx + r * 0.42} cy={cy + r * 0.45} rx={r * 0.18} ry={r * 0.07} fill="#fff" opacity={0.06} transform={`rotate(-32 ${cx + r * 0.42} ${cy + r * 0.45})`} />
     </g>
   );
   const label = (x: number, y: number, roman: string, kana: string, dark = true, size = 13) => (
@@ -249,25 +309,15 @@ export const Drums: React.FC<Props> = ({ onHit, target = [], silent }) => {
     </g>
   );
 
-  // 胴に沿う革ひも（手前半分だけ見える）
-  const straps = (cx: number, topY: number, topRx: number, topRy: number, botY: number, botRx: number, n: number, bulge = 0) =>
-    Array.from({ length: n }, (_, i) => {
-      const a = Math.PI * (0.08 + (0.84 * i) / (n - 1));
-      const x1 = cx - Math.cos(a) * topRx, y1 = topY + Math.sin(a) * topRy;
-      const x2 = cx - Math.cos(a) * botRx, y2 = botY + Math.sin(a) * topRy * 0.6;
-      const mx = cx - Math.cos(a) * (Math.max(topRx, botRx) + bulge), my = (y1 + y2) / 2;
-      return <path key={i} d={`M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`} stroke="#3b2210" strokeWidth={2.2} strokeOpacity={0.85} fill="none" pointerEvents="none" />;
-    });
-
   return (
     <svg viewBox="0 0 440 236" className="w-full h-full select-none" style={{ touchAction: 'none' }} preserveAspectRatio="xMidYMid meet">
       <defs>
-        <radialGradient id="skinHead" cx="46%" cy="42%" r="62%"><stop offset="0" stopColor="#f6e6c6" /><stop offset=".75" stopColor="#e2c899" /><stop offset="1" stopColor="#c9a873" /></radialGradient>
-        <radialGradient id="kinar" cx="50%" cy="50%" r="50%"><stop offset=".78" stopColor="#dcc192" /><stop offset=".9" stopColor="#efdcb4" /><stop offset="1" stopColor="#c4a26c" /></radialGradient>
+        <radialGradient id="skinHead" cx="44%" cy="40%" r="64%"><stop offset="0" stopColor="#f3e2bf" /><stop offset=".6" stopColor="#e6cc9c" /><stop offset=".9" stopColor="#d4b37d" /><stop offset="1" stopColor="#c09b62" /></radialGradient>
+        <radialGradient id="kinar" cx="48%" cy="46%" r="52%"><stop offset=".78" stopColor="#d9bb86" /><stop offset=".88" stopColor="#ead1a2" /><stop offset=".96" stopColor="#d1ae74" /><stop offset="1" stopColor="#a8834f" /></radialGradient>
         <radialGradient id="syahiG" cx="40%" cy="36%" r="68%"><stop offset="0" stopColor="#4a4a52" /><stop offset=".55" stopColor="#18181c" /><stop offset="1" stopColor="#060607" /></radialGradient>
         <radialGradient id="copperTop" cx="42%" cy="38%" r="62%"><stop offset=".7" stopColor="#d8904e" /><stop offset=".86" stopColor="#f3c08a" /><stop offset="1" stopColor="#6a3214" /></radialGradient>
         <radialGradient id="woodTop" cx="45%" cy="40%" r="60%"><stop offset=".72" stopColor="#8a4f27" /><stop offset=".9" stopColor="#a8693c" /><stop offset="1" stopColor="#3e1f0b" /></radialGradient>
-        <linearGradient id="gatta" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#5a3416" /><stop offset=".5" stopColor="#c08a55" /><stop offset="1" stopColor="#4a2a10" /></linearGradient>
+        <linearGradient id="gatta" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#4a2a10" /><stop offset=".3" stopColor="#a8703c" /><stop offset=".5" stopColor="#d49a5e" /><stop offset=".75" stopColor="#8a5626" /><stop offset="1" stopColor="#3a1f0a" /></linearGradient>
         <pattern id="braid" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#6b4520" /><rect width="3.5" height="7" fill="#3e2510" /></pattern>
         <radialGradient id="cloth" cx="50%" cy="50%" r="50%"><stop offset=".7" stopColor="#7a1c1c" /><stop offset=".85" stopColor="#a83232" /><stop offset="1" stopColor="#3f0c0c" /></radialGradient>
         <filter id="leather" x="0" y="0" width="100%" height="100%">
@@ -276,6 +326,28 @@ export const Drums: React.FC<Props> = ({ onHit, target = [], silent }) => {
           <feComposite in="t" in2="SourceGraphic" operator="in" result="tex" />
           <feMerge><feMergeNode in="SourceGraphic" /><feMergeNode in="tex" /></feMerge>
         </filter>
+        <radialGradient id="metalBowl" cx="42%" cy="36%" r="68%"><stop offset=".66" stopColor="#6e3412" /><stop offset=".76" stopColor="#c4712f" /><stop offset=".82" stopColor="#f2b77a" /><stop offset=".87" stopColor="#b8642a" /><stop offset=".95" stopColor="#6a2f0f" /><stop offset="1" stopColor="#2e1204" /></radialGradient>
+        <linearGradient id="metalSheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fff" stopOpacity=".55" /><stop offset=".35" stopColor="#fff" stopOpacity="0" /><stop offset=".7" stopColor="#000" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".35" /></linearGradient>
+        <radialGradient id="woodShell" cx="44%" cy="38%" r="66%"><stop offset=".72" stopColor="#5c2f12" /><stop offset=".8" stopColor="#9a5a2a" /><stop offset=".88" stopColor="#b9773f" /><stop offset=".95" stopColor="#7a4119" /><stop offset="1" stopColor="#2e1606" /></radialGradient>
+        <filter id="grain" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency=".015 .55" numOctaves="2" seed="7" result="n" />
+          <feColorMatrix in="n" type="matrix" values="0 0 0 0 .18  0 0 0 0 .09  0 0 0 0 .03  0 0 0 .55 0" result="t" />
+          <feComposite in="t" in2="SourceGraphic" operator="in" result="tex" />
+          <feMerge><feMergeNode in="SourceGraphic" /><feMergeNode in="tex" /></feMerge>
+        </filter>
+        <filter id="hammer" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency=".22" numOctaves="1" seed="2" result="n" />
+          <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 .9  0 0 0 0 .8  0 0 0 .18 -.04" result="t" />
+          <feComposite in="t" in2="SourceGraphic" operator="in" result="tex" />
+          <feMerge><feMergeNode in="SourceGraphic" /><feMergeNode in="tex" /></feMerge>
+        </filter>
+        <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4" /></filter>
+        <linearGradient id="strapG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#9a6534" /><stop offset=".5" stopColor="#7a4a22" /><stop offset="1" stopColor="#4a2810" /></linearGradient>
+        <radialGradient id="braidSeg" cx="45%" cy="40%" r="60%"><stop offset="0" stopColor="#a8743e" /><stop offset=".6" stopColor="#6e451e" /><stop offset="1" stopColor="#3a2210" /></radialGradient>
+        <radialGradient id="clothRing" cx="50%" cy="50%" r="50%"><stop offset=".86" stopColor="#4a0d0d" /><stop offset=".92" stopColor="#a52a2a" /><stop offset=".96" stopColor="#c94a3e" /><stop offset="1" stopColor="#3a0909" /></radialGradient>
+        <radialGradient id="rimShade" cx="50%" cy="50%" r="50%"><stop offset=".86" stopColor="#000" stopOpacity="0" /><stop offset=".97" stopColor="#3a2410" stopOpacity=".28" /><stop offset="1" stopColor="#1e1006" stopOpacity=".5" /></radialGradient>
+        <radialGradient id="kinarShade" cx="50%" cy="50%" r="50%"><stop offset=".9" stopColor="#000" stopOpacity="0" /><stop offset="1" stopColor="#4a3018" stopOpacity=".35" /></radialGradient>
+        <radialGradient id="gloss" cx="50%" cy="50%" r="50%"><stop offset="0" stopColor="#fff" stopOpacity=".32" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
         <linearGradient id="skin" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#c98d66" /><stop offset=".5" stopColor="#e7b48e" /><stop offset="1" stopColor="#b97d58" /></linearGradient>
         <linearGradient id="arm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#d9a17a" /><stop offset="1" stopColor="#d9a17a" stopOpacity="0" /></linearGradient>
         <radialGradient id="nail" cx="50%" cy="60%" r="75%"><stop offset="0" stopColor="#f6d6cc" /><stop offset=".7" stopColor="#e9b9a8" /><stop offset="1" stopColor="#d49e8a" /></radialGradient>
@@ -290,14 +362,18 @@ export const Drums: React.FC<Props> = ({ onHit, target = [], silent }) => {
         @keyframes ripple { from { opacity: .9; transform: scale(.2); } to { opacity: 0; transform: scale(2.6); } }
       `}</style>
 
-      {/* ===== 左：バーヤーン（真上から：銅の胴がふくらんで、皮のまわりに見える） ===== */}
-      <circle cx={B.cx} cy={B.cy} r={110} fill="url(#cloth)" />
-      <circle cx={B.cx} cy={B.cy} r={102} fill="url(#copperTop)" />
-      <circle cx={B.cx} cy={B.cy} r={102} fill="none" stroke="#3a1a08" strokeWidth={1.5} />
-      {radial(B.cx, B.cy, B.r + 6, 100, 16, 3.2)}
-      <circle cx={B.cx} cy={B.cy} r={B.r + 7} fill="url(#braid)" />
+      {/* ===== 左：バーヤーン（真上から：ふくらんだ金属の胴・革ひも・編み込みの縁・皮） ===== */}
+      {cushion(B.cx, B.cy, 92, 112)}
+      <circle cx={B.cx} cy={B.cy} r={103} fill="url(#metalBowl)" pointerEvents="none" />
+      <circle cx={B.cx} cy={B.cy} r={103} fill="url(#metalSheen)" pointerEvents="none" />
+      <path d={`M ${B.cx - 92} ${B.cy - 30} A 97 97 0 0 1 ${B.cx - 20} ${B.cy - 95}`} stroke="#fff" strokeWidth={2.5} opacity={0.3} fill="none" strokeLinecap="round" pointerEvents="none" />
+      <circle cx={B.cx} cy={B.cy} r={103} fill="none" stroke="#2a1104" strokeWidth={1.2} pointerEvents="none" />
+      {straps(B.cx, B.cy, B.r + 7, 102, 16, 2.2, 2.8)}
+      {braid(B.cx, B.cy, B.r - 0.5, B.r + 8.5)}
       {zone('ge', circ(B, B.r), 'url(#skinHead)', { filter: 'url(#leather)' })}
-      <circle cx={B.cx} cy={B.cy} r={B.r - 1} fill="none" stroke="#b08a56" strokeWidth={1} pointerEvents="none" />
+      {rimShade(B.cx, B.cy, B.r)}
+      <circle cx={B.cx} cy={B.cy} r={B.r - 7} fill="none" stroke="#b48d58" strokeWidth={0.8} opacity={0.7} pointerEvents="none" />
+      <circle cx={B.cx} cy={B.cy} r={B.r - 7} fill="url(#kinarShade)" pointerEvents="none" />
       {zone('ke', BS, 'url(#syahiG)')}
       {syahi(BS.cx, BS.cy, BS.r)}
       {lit('ge') && pulse(circ(B, B.r + 2))}
@@ -305,22 +381,24 @@ export const Drums: React.FC<Props> = ({ onHit, target = [], silent }) => {
       {label(84, 150, 'Ge', 'ゲー', true, 16)}
       {label(BS.cx, BS.cy + 1, 'Ke', 'ケ', false, 11)}
 
-      {/* ===== 右：ダーヤーン（真上から：下に広がる木の胴・革ひも・ガッタが皮のまわりに見える） ===== */}
-      <circle cx={D.cx} cy={D.cy} r={100} fill="url(#cloth)" />
-      <circle cx={D.cx} cy={D.cy} r={93} fill="url(#woodTop)" />
-      <circle cx={D.cx} cy={D.cy} r={93} fill="none" stroke="#2a1406" strokeWidth={1.5} />
-      {radial(D.cx, D.cy, D.r + 5, 92, 24, 2.4)}
-      {Array.from({ length: 8 }, (_, i) => { // ガッタ（音程を調整する木の円柱）
-        const a = ((i + 0.5) / 8) * Math.PI * 2, x = D.cx + Math.cos(a) * 84, y = D.cy + Math.sin(a) * 84;
-        return <rect key={i} x={x - 6} y={y - 9} width={12} height={18} rx={4} fill="url(#gatta)" stroke="#2a1606" strokeWidth={0.8} transform={`rotate(${(a * 180) / Math.PI + 90} ${x} ${y})`} pointerEvents="none" />;
-      })}
-      <circle cx={D.cx} cy={D.cy} r={D.r + 6} fill="url(#braid)" />
+      {/* ===== 右：ダーヤーン（真上から：下に広がる木の胴・16本の革ひも・8つのガッタ・編み込みの縁・皮） ===== */}
+      {cushion(D.cx, D.cy, 84, 104)}
+      <circle cx={D.cx} cy={D.cy} r={94} fill="url(#woodShell)" filter="url(#grain)" pointerEvents="none" />
+      <path d={`M ${D.cx - 86} ${D.cy - 26} A 90 90 0 0 1 ${D.cx - 22} ${D.cy - 88}`} stroke="#ffd9a8" strokeWidth={2} opacity={0.25} fill="none" strokeLinecap="round" pointerEvents="none" />
+      <circle cx={D.cx} cy={D.cy} r={94} fill="none" stroke="#1e0d03" strokeWidth={1.2} pointerEvents="none" />
+      {straps(D.cx, D.cy, D.r + 6, 93, 16, 2, 2.6)}
+      {gattas(D.cx, D.cy, 84, 8)}
+      {braid(D.cx, D.cy, D.r - 0.5, D.r + 7.5)}
       {zone('na', circ(D, D.r), 'url(#kinar)', { filter: 'url(#leather)' })}
-      <circle cx={D.cx} cy={D.cy} r={D.r - 12} fill="none" stroke="#a88456" strokeWidth={1.2} pointerEvents="none" />
+      {rimShade(D.cx, D.cy, D.r)}
+      {/* キナール（外側の輪）と内側の皮の境目：内側の皮を切り抜いた段差 */}
+      <circle cx={D.cx} cy={D.cy} r={D.r - 12.5} fill="none" stroke="#8a6a40" strokeWidth={1.4} opacity={0.8} pointerEvents="none" />
+      <circle cx={D.cx} cy={D.cy} r={D.r - 11.6} fill="none" stroke="#f6e3bd" strokeWidth={0.6} opacity={0.7} pointerEvents="none" />
       {zone('tin', circ(D, D.r - 13), 'url(#skinHead)', { filter: 'url(#leather)' })}
+      <circle cx={D.cx} cy={D.cy} r={D.r - 13} fill="url(#kinarShade)" pointerEvents="none" />
       {zone('te', circ(D, 29), 'url(#syahiG)')}
       {syahi(D.cx, D.cy, 29)}
-      {zone('tun', circ(D, 10), '#1c1c21', { stroke: '#5f5f68', strokeWidth: 0.8 })}
+      {zone('tun', circ(D, 10), '#0b0b0d', { fillOpacity: 0.35 })}
       {lit('na') && pulse(circ(D, D.r + 2))}
       {lit('tin') && pulse(circ(D, D.r - 15))}
       {(lit('te') || lit('re')) && pulse(circ(D, 31))}
