@@ -40,9 +40,9 @@ export default function App() {
   const navTab = isOld || tab === 'game' ? 'more' : tab;
 
   return (
-    <div className="h-[100dvh] bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-600 overflow-hidden">
+    <div className="h-[100dvh] bg-stone-950 text-stone-100 flex flex-col land:flex-row font-sans selection:bg-amber-600 overflow-hidden">
       {/* 上：ロゴと（PCでは）メニュー */}
-      <header className="h-12 shrink-0 flex items-center justify-between px-4 border-b border-stone-800 bg-stone-950">
+      <header className="h-12 shrink-0 land:hidden flex items-center justify-between px-4 border-b border-stone-800 bg-stone-950">
         <button onClick={() => setTab('lesson')} className="font-extrabold text-lg flex items-center gap-1.5"><span>🪘</span>TablaLab</button>
         <nav className="hidden md:flex items-center gap-1">
           {NAV.map((n) => (
@@ -50,6 +50,15 @@ export default function App() {
           ))}
         </nav>
       </header>
+
+      {/* 横向きのスマホ：左に細いメニュー（上下のメニューをなくして楽器を大きく） */}
+      <nav className="hidden land:flex shrink-0 w-14 flex-col items-center justify-center gap-1 border-r border-stone-800 bg-stone-950 pl-[env(safe-area-inset-left)]">
+        {NAV.map((n) => (
+          <button key={n.id} onClick={() => setTab(n.id)} aria-label={n.label} className={`w-12 py-1.5 rounded-xl flex flex-col items-center gap-0.5 ${navTab === n.id ? 'text-amber-400 bg-stone-900' : 'text-stone-500'}`}>
+            {n.icon}<span className="text-[9px] font-bold leading-none">{n.label}</span>
+          </button>
+        ))}
+      </nav>
 
       {/* 中身：各画面は1画面に収まる。従来の詳しい画面だけスクロール */}
       <main className={`flex-1 min-h-0 ${isOld ? 'overflow-y-auto' : 'overflow-hidden'}`}>
@@ -93,7 +102,7 @@ export default function App() {
       </main>
 
       {/* 下：大きなタブ（スマホ・タブレット） */}
-      <nav className="md:hidden shrink-0 grid grid-cols-5 border-t border-stone-800 bg-stone-950 pb-[env(safe-area-inset-bottom)]">
+      <nav className="md:hidden land:hidden shrink-0 grid grid-cols-5 border-t border-stone-800 bg-stone-950 pb-[env(safe-area-inset-bottom)]">
         {NAV.map((n) => (
           <button key={n.id} onClick={() => setTab(n.id)} className={`flex flex-col items-center justify-center gap-0.5 py-2 ${navTab === n.id ? 'text-amber-400' : 'text-stone-500'}`}>
             {n.icon}<span className="text-[10px] font-bold">{n.label}</span>

@@ -123,7 +123,7 @@ const StepPlayer: React.FC<PlayerProps> = ({ unit, step, onExit, onNext, onClear
   const miss = () => setShake((x) => x + 1);
 
   return (
-    <div className="h-full flex flex-col p-3 gap-2 max-w-3xl mx-auto w-full relative">
+    <div className="h-full flex flex-col p-3 land:p-1.5 gap-2 land:gap-1 max-w-3xl land:max-w-none mx-auto w-full relative">
       {/* 上：戻る・進み具合 */}
       <div className="flex items-center gap-2">
         <button onClick={onExit} className="w-10 h-10 rounded-full bg-stone-800 flex items-center justify-center" aria-label="もどる"><ArrowLeft className="w-5 h-5" /></button>
@@ -133,13 +133,13 @@ const StepPlayer: React.FC<PlayerProps> = ({ unit, step, onExit, onNext, onClear
         <span className="text-xl">{unit.icon}</span>
       </div>
       {/* 一言の指示 */}
-      <div key={shake} className={`flex items-center justify-center gap-2 py-1 ${shake ? 'animate-wiggle' : ''}`}>
-        <h2 className="text-xl sm:text-2xl font-extrabold text-stone-50 text-center">{step.say}</h2>
+      <div key={shake} className={`flex items-center justify-center gap-2 py-1 land:py-0 ${shake ? 'animate-wiggle' : ''}`}>
+        <h2 className="text-xl sm:text-2xl land:text-lg font-extrabold text-stone-50 text-center">{step.say}</h2>
         {step.hint && <button onClick={() => setShowHint((v) => !v)} className="text-stone-400" aria-label="ヒント"><HelpCircle className="w-5 h-5" /></button>}
       </div>
       {showHint && step.hint && <div className="text-center text-sm text-teal-300 -mt-1">{step.hint}</div>}
 
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col land:flex-row land:gap-2">
         {step.kind === 'tap' && <TapGame key={tries} step={step} onDone={finish} onMiss={miss} />}
         {step.kind === 'rhythm' && <RhythmGame key={tries} step={step} onDone={finish} onRetry={() => setTries((t) => t + 1)} />}
         {step.kind === 'quiz' && <QuizGame key={tries} step={step} onDone={finish} onMiss={miss} />}
@@ -221,7 +221,7 @@ const TapGame: React.FC<{ step: Step; onDone: (s: number) => void; onMiss: () =>
   return (
     <>
       <div className="flex-1 min-h-0"><Drums onHit={onHit} target={at < seq.length ? [seq[at]] : []} /></div>
-      <div className="flex flex-col gap-2 pb-1"><SeqChips seq={seq} at={at} /><ComboButtons seq={seq} /></div>
+      <div className="flex flex-col gap-2 pb-1 land:pb-0 land:w-44 land:shrink-0 land:justify-center"><SeqChips seq={seq} at={at} /><ComboButtons seq={seq} /></div>
     </>
   );
 };
@@ -288,7 +288,7 @@ const RhythmGame: React.FC<{ step: Step; onDone: (s: number) => void; onRetry: (
         )}
         {phase === 'count' && <div className="absolute top-1 left-0 right-0 text-center text-amber-300 font-bold">カウント…</div>}
       </div>
-      <div className="flex flex-col gap-2 pb-1"><SeqChips seq={seq} at={phase === 'play' ? beat : -1} marks={marks} /><ComboButtons seq={seq} /></div>
+      <div className="flex flex-col gap-2 pb-1 land:pb-0 land:w-44 land:shrink-0 land:justify-center"><SeqChips seq={seq} at={phase === 'play' ? beat : -1} marks={marks} /><ComboButtons seq={seq} /></div>
     </>
   );
 };
@@ -316,15 +316,15 @@ const QuizGame: React.FC<{ step: Step; onDone: (s: number) => void; onMiss: () =
     } else { mistakes.current++; setBad(b); onMiss(); }
   };
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-6">
+    <div className="flex-1 flex flex-col items-center justify-center gap-6 land:gap-3">
       <div className="flex gap-1.5">{Array.from({ length: rounds }, (_, i) => <div key={i} className={`w-3 h-3 rounded-full ${i < r ? 'bg-amber-500' : i === r ? 'bg-amber-300' : 'bg-stone-700'}`} />)}</div>
-      <button onClick={() => play(ans)} className="w-28 h-28 rounded-full bg-amber-600 text-white flex flex-col items-center justify-center shadow-xl active:scale-95">
+      <button onClick={() => play(ans)} className="w-28 h-28 land:w-20 land:h-20 rounded-full bg-amber-600 text-white flex flex-col items-center justify-center shadow-xl active:scale-95">
         <Volume2 className="w-10 h-10" /><span className="text-xs font-bold mt-1">もう一度</span>
       </button>
       <div className={`grid gap-3 w-full max-w-md ${opts.length === 2 ? 'grid-cols-2' : opts.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
         {opts.map((b) => (
           <button key={b} onClick={() => choose(b)}
-            className={`py-5 rounded-2xl text-xl font-extrabold border-2 transition-colors ${ok === b ? 'bg-emerald-600 border-emerald-400 text-white' : bad === b ? 'bg-red-900 border-red-600 text-red-100' : 'bg-stone-800 border-stone-700 text-stone-100'}`}>
+            className={`py-5 land:py-2 rounded-2xl text-xl font-extrabold border-2 transition-colors ${ok === b ? 'bg-emerald-600 border-emerald-400 text-white' : bad === b ? 'bg-red-900 border-red-600 text-red-100' : 'bg-stone-800 border-stone-700 text-stone-100'}`}>
             <BolText b={b} big />
           </button>
         ))}
@@ -361,7 +361,7 @@ const SamGame: React.FC<{ step: Step; onDone: (s: number) => void; onMiss: () =>
     window.setTimeout(() => setFlash(null), 250);
   };
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-5">
+    <div className="flex-1 flex flex-col items-center justify-center gap-5 land:gap-2">
       <div className="flex flex-wrap justify-center gap-1 max-w-md">
         {Array.from({ length: taal.beats }, (_, i) => (
           <div key={i} className={`w-6 h-6 rounded-full border-2 ${i === 0 ? 'border-red-500' : i === 8 ? 'border-sky-500' : 'border-stone-600'} ${beat === i ? (i === 0 ? 'bg-red-500' : 'bg-amber-400') : 'bg-stone-900'}`} />
@@ -369,10 +369,10 @@ const SamGame: React.FC<{ step: Step; onDone: (s: number) => void; onMiss: () =>
       </div>
       <div className="text-amber-300 font-bold">{got} / {need}</div>
       {!running ? (
-        <button onClick={start} className="w-40 h-40 rounded-full bg-amber-600 text-white font-extrabold text-2xl shadow-2xl flex flex-col items-center justify-center gap-1"><Play className="w-8 h-8" />スタート</button>
+        <button onClick={start} className="w-40 h-40 land:w-28 land:h-28 rounded-full bg-amber-600 text-white font-extrabold text-2xl shadow-2xl flex flex-col items-center justify-center gap-1"><Play className="w-8 h-8" />スタート</button>
       ) : (
         <button onPointerDown={(e) => { e.preventDefault(); tap(); }}
-          className={`w-48 h-48 rounded-full text-white font-extrabold text-3xl shadow-2xl active:scale-95 transition-colors ${flash === 'ok' ? 'bg-emerald-500' : flash === 'ng' ? 'bg-red-700' : 'bg-red-600'}`}>サム！</button>
+          className={`w-48 h-48 land:w-32 land:h-32 rounded-full text-white font-extrabold text-3xl shadow-2xl active:scale-95 transition-colors ${flash === 'ok' ? 'bg-emerald-500' : flash === 'ng' ? 'bg-red-700' : 'bg-red-600'}`}>サム！</button>
       )}
     </div>
   );

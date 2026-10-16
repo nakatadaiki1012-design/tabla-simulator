@@ -236,7 +236,7 @@ export const SitarPanel: React.FC = () => {
 
   const short = (n: string) => n.replace(/（.*/, '');
   return (
-    <div className="h-full flex flex-col gap-2 p-3 max-w-6xl mx-auto w-full relative">
+    <div className="h-full flex flex-col gap-2 p-3 land:p-1.5 land:overflow-y-auto max-w-6xl land:max-w-none mx-auto w-full relative">
       {/* 1行の操作バー */}
       <div className="flex items-center gap-2">
         <select value={raagId} onChange={(e) => setRaagId(e.target.value)} aria-label="ラーガ" className="bg-stone-900 border border-stone-700 rounded-xl px-3 py-2.5 text-sm font-bold text-stone-100 min-w-0 flex-1 sm:flex-none sm:w-48">
@@ -250,7 +250,7 @@ export const SitarPanel: React.FC = () => {
       </div>
 
       <div className="hidden lg:block"><SitarOverview playing={curNote != null} /></div>
-        <div ref={scrollRef} className="overflow-x-auto rounded-xl">
+        <div ref={scrollRef} className="overflow-x-auto rounded-xl shrink-0">
         <svg ref={svgRef} viewBox="0 0 1000 236" className="w-full min-w-[1040px] sm:min-w-0 h-auto select-none rounded-xl" style={{ touchAction: 'pan-x', background: 'radial-gradient(ellipse at 50% 40%,#2a1a10,#120a06)' }}
           onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
           <defs>

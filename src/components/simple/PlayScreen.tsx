@@ -40,13 +40,13 @@ export const PlayScreen: React.FC = () => {
   const combos: BolKey[] = ['dha', 'dhin', 'ti_re_ki_ta', 'meend'];
 
   return (
-    <div className="h-full flex flex-col p-3 gap-2 max-w-4xl mx-auto w-full relative">
-      <div className="flex items-center justify-between">
+    <div className="h-full flex flex-col land:flex-row p-3 land:p-1 gap-2 max-w-4xl land:max-w-none mx-auto w-full relative">
+      <div className="flex items-center justify-between land:absolute land:left-2 land:right-32 land:top-1 land:z-10 land:pointer-events-none">
         <div className="h-12 min-w-24 flex items-baseline gap-2">{last && <><span className="text-4xl font-extrabold text-amber-400">{BOL_ROMAN[last]}</span><span className="text-lg font-bold text-amber-200/70">{BOL_LABEL[last]}</span></>}</div>
-        <button onClick={() => setSheet(true)} className="w-11 h-11 rounded-full bg-stone-800 flex items-center justify-center" aria-label="設定"><Settings className="w-5 h-5" /></button>
+        <button onClick={() => setSheet(true)} className="w-11 h-11 rounded-full bg-stone-800 flex items-center justify-center land:pointer-events-auto" aria-label="設定"><Settings className="w-5 h-5" /></button>
       </div>
       <div className="flex-1 min-h-0"><Drums onHit={onHit} /></div>
-      <div className="grid grid-cols-4 gap-2 pb-1">
+      <div className="grid grid-cols-4 land:grid-cols-1 land:w-28 land:shrink-0 land:content-center gap-2 pb-1 land:pb-0">
         {combos.map((b) => (
           <button key={b} onPointerDown={(e) => { e.preventDefault(); strikeDrums(b); }}
             className="py-2.5 rounded-xl bg-stone-800 border border-stone-700 text-stone-100 active:bg-amber-700"><BolText b={b} big /></button>

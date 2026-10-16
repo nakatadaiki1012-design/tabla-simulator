@@ -188,7 +188,7 @@ const Play1: React.FC<{ song: Song; slow: boolean; guide: boolean; onBack: () =>
 
   const hasBoth = song.beats.some((b) => /dha|dhin/.test(b));
   return (
-    <div className="h-full flex flex-col p-3 gap-2 max-w-4xl mx-auto w-full relative">
+    <div className="h-full flex flex-col p-3 land:p-1.5 gap-2 land:gap-1 max-w-4xl land:max-w-none mx-auto w-full relative">
       <div className="flex items-center gap-2">
         <button onClick={() => { cancelAnimationFrame(raf.current); onBack(); }} className="w-10 h-10 rounded-full bg-stone-800 flex items-center justify-center" aria-label="もどる"><ArrowLeft className="w-5 h-5" /></button>
         <b className="text-stone-100">{song.name}</b>
@@ -198,7 +198,7 @@ const Play1: React.FC<{ song: Song; slow: boolean; guide: boolean; onBack: () =>
       </div>
 
       {/* 音符が流れるレーン */}
-      <div ref={lane} className="relative h-24 shrink-0 rounded-2xl bg-stone-900 border border-stone-800 overflow-hidden">
+      <div ref={lane} className="relative h-24 land:h-20 shrink-0 rounded-2xl bg-stone-900 border border-stone-800 overflow-hidden">
         <div className="absolute left-0 right-0 top-1/2 h-px bg-stone-700" />
         <div className="absolute top-1/2 -translate-y-1/2 w-16 h-16 rounded-full border-4 border-white/70" style={{ left: 44 - 32 }} />
         {notes.current.map((n, i) => (
@@ -209,6 +209,7 @@ const Play1: React.FC<{ song: Song; slow: boolean; guide: boolean; onBack: () =>
         {judge && <div key={judge.id} className={`absolute left-[88px] top-1 font-extrabold text-lg animate-bounce ${judge.cls}`}>{judge.text}</div>}
       </div>
 
+      <div className="flex-1 min-h-0 flex flex-col land:flex-row gap-2">
       <div className="flex-1 min-h-0 relative">
         <Drums onHit={onHit} target={next ? [next] : []} />
         {phase === 'ready' && (
@@ -218,13 +219,15 @@ const Play1: React.FC<{ song: Song; slow: boolean; guide: boolean; onBack: () =>
         )}
       </div>
       {hasBoth && (
-        <div className="flex justify-center gap-3 pb-1">
+        <div className="flex land:flex-col justify-center gap-3 pb-1 land:pb-0">
           {(['dha', 'dhin'] as BolKey[]).map((b) => (
             <button key={b} onPointerDown={(e) => { e.preventDefault(); strikeDrums(b); }}
               className="min-w-24 px-5 py-2 rounded-xl bg-red-700 text-white active:scale-95"><BolText b={b} big /></button>
           ))}
         </div>
       )}
+
+      </div>
 
       {phase === 'done' && result && (
         <div className="absolute inset-0 z-20 bg-stone-950/90 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
