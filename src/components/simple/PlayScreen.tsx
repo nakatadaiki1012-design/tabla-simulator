@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Settings, X } from 'lucide-react';
 import { Drums, BOL_LABEL, BOL_ROMAN, BolText, strikeDrums } from './Drums';
 import { tablaAudio } from '../../audio/tablaAudioEngine';
+import { StageMini } from '../stage/StageMini';
 import { BolKey } from '../../types/tabla';
 
 type ButtonSet = 'combo' | 'single' | 'all';
@@ -56,10 +57,13 @@ export const PlayScreen: React.FC = () => {
     <div className="h-full flex flex-col land:flex-row p-3 land:p-1 gap-2 max-w-4xl land:max-w-none mx-auto w-full relative">
       <div className="flex items-center justify-between land:absolute land:left-2 land:right-48 land:top-1 land:z-10 land:pointer-events-none">
         <div className="h-12 min-w-24 flex items-baseline gap-2">{last && <><span className="text-4xl font-extrabold text-amber-400">{BOL_ROMAN[last]}</span><span className="text-lg font-bold text-amber-200/70">{BOL_LABEL[last]}</span></>}</div>
+        <div className="hidden md:block land:block ml-auto mr-2 land:pointer-events-auto"><StageMini variant="float" floatClass="absolute left-3 top-14 z-20 w-72 h-44 land:w-60 land:h-36" /></div>
         <button onClick={() => setSheet(true)} className="w-11 h-11 rounded-full bg-stone-800 flex items-center justify-center land:pointer-events-auto" aria-label="設定"><Settings className="w-5 h-5" /></button>
       </div>
+      {/* スマホ縦：太鼓の上のあいた所に 3D の演奏者 */}
+      <div className="md:hidden land:hidden flex flex-col shrink-0"><StageMini variant="inline" className="h-40 w-full" /></div>
       <div className="flex-1 min-h-0"><Drums onHit={onHit} /></div>
-      <div className={`flex flex-col gap-1.5 pb-1 land:pb-0 land:shrink-0 land:justify-center ${buttons.length > 4 ? 'land:w-44' : 'land:w-28'}`}>
+      <div className={`flex flex-col gap-1.5 pb-1 land:pb-0 land:shrink-0 land:justify-center land:w-44`}>
         <div className="flex justify-center gap-1">
           {(Object.keys(BUTTON_SETS) as ButtonSet[]).map((k) => (
             <button key={k} onClick={() => chooseSet(k)} className={`px-3 land:px-2 py-1 rounded-full text-xs land:text-[11px] font-bold whitespace-nowrap ${set === k ? 'bg-amber-600 text-white' : 'bg-stone-800 text-stone-400'}`}>{BUTTON_SETS[k].label}</button>

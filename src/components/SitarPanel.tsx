@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Play, Square, Repeat, Info, X } from 'lucide-react';
 import { sitarAudio, SitarStroke } from '../audio/sitarEngine';
 import { tablaAudio } from '../audio/tablaAudioEngine';
+import { StageMini } from './stage/StageMini';
 import { ensemble, ENSEMBLE_TAALS, FLOW, beatMarks } from '../audio/ensemble';
 import { RAAGS, ladderOf, tarafOf, swaraName, parseSargam, OPEN_STRING } from '../data/raags';
 
@@ -247,6 +248,7 @@ export const SitarPanel: React.FC = () => {
         </select>
         <button onClick={toggleTanpura} aria-label="タンプーラ（持続音）" className={`h-11 px-3 rounded-xl text-sm font-bold whitespace-nowrap ${tanpura ? 'bg-emerald-700 text-white' : 'bg-stone-800 text-stone-300'}`}>🎵 持続音</button>
         <button onClick={() => setInfoOpen(true)} aria-label="説明" className="w-11 h-11 rounded-xl bg-stone-800 flex items-center justify-center shrink-0"><Info className="w-5 h-5 text-stone-300" /></button>
+        <StageMini variant="float" floatClass="absolute right-3 top-16 z-20 w-72 h-44 max-w-[calc(100%-1.5rem)]" />
       </div>
 
       <div className="hidden lg:block"><SitarOverview playing={curNote != null} /></div>

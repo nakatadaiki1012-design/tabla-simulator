@@ -95,7 +95,8 @@ export interface Meend { at: number; to: number; dur: number } // at/dur: 秒（
 export type SitarEvent =
   | { type: 'note'; semi: number; stroke: SitarStroke; meend?: Meend[] | null; time: number }
   | { type: 'chikari'; time: number }
-  | { type: 'taraf'; index: number; time: number };
+  | { type: 'taraf'; index: number; time: number }
+  | { type: 'bend'; semitones: number; time: number };
 
 class SitarEngine {
   private cache = new Map<string, AudioBuffer>();
@@ -226,6 +227,7 @@ class SitarEngine {
   bend(semitones: number, release = false) {
     const ctx = this.ctx(); if (!ctx || !this.lastMain) return;
     try { this.lastMain.src.playbackRate.setTargetAtTime(Math.pow(2, semitones / 12), ctx.currentTime, release ? 0.06 : 0.015); } catch { /* noop */ }
+    this.emit({ type: 'bend', semitones: release ? 0 : semitones, time: ctx.currentTime });
   }
 
   /** 弾き直さずに別の音へ滑らせる（押さえた指をフレットに沿って滑らせる奏法） */

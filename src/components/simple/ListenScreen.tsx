@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Info, Play, Square, X } from 'lucide-react';
 import { AUTO_PERFORMANCES, AutoPerformance } from '../../audio/autoPerformances';
+import { StageMini } from '../stage/StageMini';
 import { tablaAudio } from '../../audio/tablaAudioEngine';
 
 const TYPE: Record<AutoPerformance['compositionType'], { name: string; icon: string }> = {
@@ -61,15 +62,15 @@ export const ListenScreen: React.FC = () => {
           <div className="font-bold text-stone-100 truncate">{cur ? TYPE[cur.compositionType].name : 'えらんで きく'}</div>
           {cur && <div className="text-xs text-stone-400">{shortGharana(cur.gharana)}</div>}
           <div className="h-2 bg-stone-800 rounded-full mt-2 overflow-hidden"><div className="h-full bg-amber-500" style={{ width: `${pos * 100}%` }} /></div>
-          <div className="flex gap-1.5 mt-2">
-            {[0.5, 0.75, 1].map((s) => <button key={s} onClick={() => setSpeed(s)} className={`px-3 py-1 rounded-full text-xs font-bold ${speed === s ? 'bg-amber-600 text-white' : 'bg-stone-800 text-stone-400'}`}>{s === 1 ? 'ふつう' : s === 0.75 ? 'ゆっくり' : 'とてもゆっくり'}</button>)}
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {[0.5, 0.75, 1].map((s) => <button key={s} onClick={() => setSpeed(s)} className={`px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap ${speed === s ? 'bg-amber-600 text-white' : 'bg-stone-800 text-stone-400'}`}>{s === 1 ? 'ふつう' : s === 0.75 ? 'ゆっくり' : 'もっとゆっくり'}</button>)}
           </div>
         </div>
         {cur && <button onClick={stop} className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center" aria-label="止める"><Square className="w-5 h-5 text-white" /></button>}
       </div>
 
       {/* 曲のタイル */}
-      <div className="flex-1 min-h-0 grid grid-cols-2 sm:grid-cols-3 gap-2 content-start">
+      <div className="shrink min-h-0 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-2 content-start">
         {LIST.map((p) => {
           const t = TYPE[p.compositionType], on = cur?.id === p.id;
           return (
@@ -86,6 +87,9 @@ export const ListenScreen: React.FC = () => {
           );
         })}
       </div>
+
+      {/* あいた所に 3D の演奏者（お手本に合わせてタブラー奏者が叩く） */}
+      <div className="flex-1 min-h-36 flex flex-col land:hidden"><StageMini variant="inline" className="flex-1 min-h-36 w-full" /></div>
 
       {info && (
         <div className="absolute inset-0 z-20 bg-black/60 flex items-end sm:items-center justify-center" onClick={() => setInfo(null)}>

@@ -1179,8 +1179,17 @@ class TablaAudioEngine {
   /**
    * 指定した時刻に正確にボルを鳴らす（アンサンブル用・録音を使用）
    */
+  // ---- 叩いた瞬間を知らせる（3Dの演奏者を動かすため）----
+  private strikeListeners = new Set<(e: { bol: BolKey; time: number }) => void>();
+  public onStrike(f: (e: { bol: BolKey; time: number }) => void) { this.strikeListeners.add(f); return () => { this.strikeListeners.delete(f); }; }
+  private emitStrike(bol: BolKey, time: number) { this.strikeListeners.forEach((f) => { try { f({ bol, time }); } catch { /* noop */ } }); }
+
   public scheduleBol(bol: BolKey, when: number, intensity: number = 1.0) {
     if (!this.ensureContext()) return;
+    this.emitStrike(bol, when);
+    this.scheduleBolSilently(bol, when, intensity);
+  }
+  private scheduleBolSilently(bol: BolKey, when: number, intensity: number = 1.0) {
     const v = intensity * (0.94 + Math.random() * 0.12);
     switch (bol) {
       case 'dha': this.playSample('na', v * 0.95, undefined, false, when); this.playSample('ge', v * 0.95, undefined, false, when); break;
@@ -1197,6 +1206,7 @@ class TablaAudioEngine {
   public playBol(bol: BolKey, customBend?: number) {
     // どの画面から叩いても、音の準備（初回の録音読み込みを含む）を必ず行う
     if (!this.ensureContext()) return;
+    this.emitStrike(bol, this.ctx!.currentTime);
     // Mode 1: Pure Studio Sampler
     if (this.engineMode === 'sampler') {
       if (this.sampleBuffers.has(bol)) {
@@ -1215,7 +1225,7 @@ class TablaAudioEngine {
       }
       // ティラキタも録音（テ・ラ・ケ・テ）で鳴らす
       if (bol === 'ti_re_ki_ta' && this.sampleBuffers.has('te') && this.sampleBuffers.has('ke')) {
-        this.scheduleBol('ti_re_ki_ta', this.ctx!.currentTime);
+        this.scheduleBolSilently('ti_re_ki_ta', this.ctx!.currentTime);
         return;
       }
     }
