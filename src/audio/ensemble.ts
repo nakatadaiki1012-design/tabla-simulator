@@ -34,7 +34,7 @@ export const ENSEMBLE_TAALS: EnsembleTaal[] = [
   { id: 'ektaal', name: 'エークタール（12拍）', beats: 12, vib: [2, 2, 2, 2, 2, 2], marks: ['X', '0', '2', '0', '3', '4'], bpm: 70,
     theka: [b('dhin'), b('dhin'), b('dha ge'), b('ti_re_ki_ta'), b('tun'), b('na'), b('ke'), b('na'), b('dha ge'), b('ti_re_ki_ta'), b('dhin'), b('na')],
     label: ['Dhin', 'Dhin', 'DhaGe', 'TiRaKiTa', 'Tu', 'Na', 'Kat', 'Ta', 'DhaGe', 'TiRaKiTa', 'Dhi', 'Na'] },
-  { id: 'keherwa', name: 'ケヘルワー（8拍）', beats: 8, vib: [4, 4], marks: ['X', '0'], bpm: 110,
+  { id: 'keherwa', name: 'ケヘルワ（8拍）', beats: 8, vib: [4, 4], marks: ['X', '0'], bpm: 110,
     theka: 'dha ge na te na ke dhin na'.split(' ').map((x) => [x as BolKey]),
     label: 'Dha Ge Na Ti Na Ka Dhi Na'.split(' ') },
   { id: 'dadra', name: 'ダードラー（6拍）', beats: 6, vib: [3, 3], marks: ['X', '0'], bpm: 120,

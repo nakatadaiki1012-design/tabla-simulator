@@ -375,7 +375,7 @@ export const AutoPlayer: React.FC<Props> = ({ onBolPlayed }) => {
               <span className="text-xl">🎶</span> 本格自動演奏 ＆ 演奏ガイド・体感モード
             </h2>
             <p className="text-xs text-stone-400">
-              プロのお手本演奏をじっくり鑑賞することも、画面のガイドに合わせてキーボードを叩き、
+              お手本演奏（伝統のテーカと、このアプリのオリジナル曲）をじっくり鑑賞することも、画面のガイドに合わせてキーボードを叩き、
               自分自身でインド打楽器の演奏を再現して習得することもできます。
             </p>
           </div>
@@ -419,8 +419,8 @@ export const AutoPlayer: React.FC<Props> = ({ onBolPlayed }) => {
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-stone-400 font-semibold">ジャンル絞り込み:</span>
             {[
-              { id: 'all', label: 'すべて (6名演)' },
-              { id: 'solo', label: '巨匠独奏・レラ/カイダ' },
+              { id: 'all', label: 'すべて (6曲)' },
+              { id: 'solo', label: '独奏・レラ/カイダ' },
               { id: 'theka', label: '基本周期・テーカ' },
               { id: 'groove', label: '導入ペシュカール' },
               { id: 'climax', label: '白熱クライマックス' },
@@ -620,7 +620,7 @@ export const AutoPlayer: React.FC<Props> = ({ onBolPlayed }) => {
                 <span className="text-xs font-bold text-stone-200">
                   {isPlaying
                     ? playMode === 'listen'
-                      ? '🔴 巨匠の生実演中（リアルタイム打法追尾）'
+                      ? '🔴 お手本を自動演奏中（打ち方を追いかけて表示）'
                       : '🎯 ガイド追尾中（タイミングを合わせて叩こう）'
                     : '⏸ 停止中（スタートを押すと打撃を再現）'}
                 </span>
@@ -1157,9 +1157,9 @@ export const AutoPlayer: React.FC<Props> = ({ onBolPlayed }) => {
         {/* Step-by-Step Interactive Playhead Grid */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between text-xs text-stone-400">
-            <span>楽曲全体のタイムライン（各拍のボル）:</span>
+            <span>楽曲全体のタイムライン（1打ずつのボル）:</span>
             <span className="text-[11px] text-stone-500">
-              進行: {currentStepIndex + 1} / {activePerformance.steps.length} 拍
+              進行: {currentStepIndex + 1} / {activePerformance.steps.length} 打
             </span>
           </div>
 

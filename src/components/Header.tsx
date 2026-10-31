@@ -57,7 +57,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenKe
               : ''
           }`}
         >
-          巨匠の自動演奏
+          お手本の自動演奏
         </button>
         <button
           onClick={() => onTabChange('sitar')}

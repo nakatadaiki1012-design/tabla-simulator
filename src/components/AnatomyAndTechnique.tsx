@@ -30,7 +30,7 @@ export const AnatomyAndTechnique: React.FC<Props> = ({ onPlayBol }) => {
         </div>
         <p className="text-sm text-stone-400 mt-1.5 leading-relaxed">
           インドの長い太鼓の伝統から、なぜこの2つの太鼓は今の形（18世紀ごろ）になったのか？
-          3層に重なる山羊皮「プリー（Puri）」の断面構造、鉄粉を塗り重ねた「シャヒ」、そして口承で受け継がれるリズム言語「ボル（Bol）」の全貌を解説します。
+          2枚の皮（主皮＋外周のキナール）とシャヒでできた「プリー（Puri）」の構造、鉄粉を塗り重ねた「シャヒ」、そして口承で受け継がれるリズム言語「ボル（Bol）」の全貌を解説します。
         </p>
       </div>
 

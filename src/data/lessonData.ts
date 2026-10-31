@@ -499,13 +499,13 @@ export const LESSONS_DATA: InteractiveLesson[] = [
   },
 
   // =========================================================================
-  // Lesson 6: 代表的8拍『Keherwa（カハルヴァ）』
+  // Lesson 6: 代表的8拍『Keherwa（ケヘルワ）』
   // =========================================================================
   {
     id: 'lesson_6_keherwa',
     lessonNumber: 6,
     levelBadge: 'Lv.6 👑',
-    title: '最も親しまれる8拍のリズム『Keherwa（カハルヴァ）』',
+    title: '最も親しまれる8拍のリズム『Keherwa（ケヘルワ）』',
     shortTitle: '8拍 Keherwa',
     targetPhrase: 'Dha · Ge · Na · Tin | Na · Ke · Dhin · Na',
     missionGoal: 'インド映画や民謡・バジャンで最も愛される8拍子の定番グルーヴを演奏しよう！',

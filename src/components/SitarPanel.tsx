@@ -403,7 +403,7 @@ export const SitarPanel: React.FC = () => {
             <hr className="border-stone-800" />
             <ul className="text-xs text-stone-400 space-y-1.5 leading-relaxed">
               <li><b className="text-stone-200">ミーンド</b>：弦を横に引いて音程を上げる技</li>
-              <li><b className="text-stone-200">チカリ弦</b>：上の細い2本。リズムの「チャン」</li>
+              <li><b className="text-stone-200">チカリ弦</b>：上の細い2〜3本。リズムの「チャン」</li>
               <li><b className="text-stone-200">共鳴弦</b>：フレットの下の細い弦。同じ音で光って響く</li>
               <li><b className="text-stone-200">Da / Ra</b>：右手の爪の向き（内向き／外向き）</li>
               <li><b className="text-stone-200">自動演奏の順番</b>：{FLOW.map((f) => f.name.replace(/（.*/, '')).join(' → ')}</li>

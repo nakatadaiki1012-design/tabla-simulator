@@ -325,7 +325,7 @@ export const LearningHub: React.FC<Props> = ({
                 </h4>
                 <p>
                   通常の丸い膜（太鼓）を叩くと、物理法則（ベッセル関数）に従って
-                  <strong>1 : 1.59 : 2.14 : 2.30</strong> という非整数の不協和な倍音が出ます。そのため普通の太鼓は「ポコポコ」と濁った音になり、音階（ドレミ）が聞こえません。
+                  <strong>1 : 1.59 : 2.14 : 2.30</strong> という非整数の不協和な倍音が出ます。そのため多くの太鼓は「ポコポコ」と音程のはっきりしない音になります。
                 </p>
                 <p>
                   しかしタブラの中央には、鉄粉・煤・米糊を同心円状に塗り重ねた重り<strong>「シャヒ」</strong>があります。
@@ -346,7 +346,7 @@ export const LearningHub: React.FC<Props> = ({
                 </p>
                 <p>
                   例えば<strong>Na</strong>は薬指でシャヒ端を軽く押さえて基音を殺し、外縁の第2・第3倍音だけをベルのように共鳴させます。
-                  逆に<strong>Tun</strong>はシャヒ中央を弾いて指を離すことで、全倍音を一斉に歌わせます。
+                  逆に<strong>Tun</strong>はシャヒ中央を弾いて指を離すことで、基音（0,1モード）を中心に長く響かせます。
                   このように<strong>「1枚の皮の中に全く異なる共振点を作り出している」</strong>のが音の違いの仕組みです。
                 </p>
               </div>
@@ -600,10 +600,10 @@ export const LearningHub: React.FC<Props> = ({
             <div className="border-b border-stone-800 pb-3">
               <span className="text-xs font-bold text-amber-500 uppercase tracking-wider">Instrument Anatomy</span>
               <h3 className="text-xl font-bold text-stone-100 mt-1">
-                楽器の構造と職人技：3層山羊皮プリーの解剖学
+                楽器の構造と職人技：2枚の皮とシャヒでできたプリーの解剖学
               </h3>
               <p className="text-xs text-stone-400 mt-1">
-                タブラの打面「プリー」は、1枚の皮ではなく3層の皮と鉄粉の練り込みによって出来ています。
+                タブラの打面「プリー」は、1枚の皮ではなく、2枚の皮（主皮のマイダン＋外周のキナール）と、鉄粉を練り込んだシャヒでできています。
               </p>
             </div>
 

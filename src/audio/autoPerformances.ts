@@ -105,7 +105,7 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
     structureNotes:
       '前半8拍：低音あり（Dha Ge Te Te）→ 後半8拍：9拍目から低音を抜き（Ta Ke Te Te）、13拍目で低音が戻ってサムへ。',
     learningPoint:
-      '左手の「Ge」がリズムの骨格を支え、右手の「Te-Te」が流れるようなレガートを作る「左右交互打撃」の極致です。',
+      '左手の「Ge」がリズムの骨格を支え、右手の「Te-Te」が途切れない流れを作る「左右交互打撃」の極致です。',
     steps: fromBeats(156, [
       'Dha Ge Te Te', 'Dha Ge Te Te', 'Dha Ti Dha Ge', 'Na Ti Ke Na',
       'Dha Ge Te Te', 'Dha Ge Te Te', 'TRKT', 'Tin Na Ke Na',
@@ -280,7 +280,7 @@ export const AUTO_PERFORMANCES: AutoPerformance[] = [
     title: 'Farrukhabad-style Peshkar (app original)',
     titleJa: 'ファルッカーバード流派スタイルのペシュカール（導入）',
     masterArtist: 'ファルッカーバード流派のスタイル（このアプリのオリジナル作曲）',
-    gharana: 'ファルカバード流派（Farrukhabad Gharana）',
+    gharana: 'ファルッカーバード流派（Farrukhabad Gharana）',
     compositionType: 'Peshkar',
     category: 'groove',
     categoryJa: '導入（ペシュカール）',
