@@ -95,7 +95,7 @@ const GAT = U('2 1 0 S 1 2 3 S 4 3 4 5 4 S 3 2 4 5 O S O-1 4 3 S 2 1 2 3 1 -1 0 
 const TODA = U('0 1 2 3 1 2 3 4 2 3 4 5 3 4 5 6 O O-1 O-2 O-3 O-1 O-2 O-3 O-4 O-2 O-3 O-4 O-5 4 3 2 1');
 
 /** 演奏全体を「何秒後に何を鳴らすか」の一覧にする */
-export function buildPerformance(raag: Raag, ids: string[]) {
+export function buildPerformance(raag: Raag, ids: string[], tempo = 1) {
   const ladder = ladderOf(raag), i0 = ladder.indexOf(0), N = raag.notes.length;
   const pos = (tok: string | number) => { const m = String(tok).match(/^O([+-]\d+)?$/); return m ? N + (m[1] ? +m[1] : 0) : +tok; };
   const semiOf = (tok: string | number) => ladder[Math.max(0, Math.min(ladder.length - 1, i0 + pos(tok)))];
@@ -180,18 +180,18 @@ export function buildPerformance(raag: Raag, ids: string[]) {
     t += units.length * spu;
   };
   const gatFiller = GAT.flatMap((u) => [u, 'S']);
-  if (ids.includes('gat')) { ev.push({ t, type: 'sec', id: 'gat' }); playUnits([...GAT, ...GAT], 2, 112, 'alt'); }
+  if (ids.includes('gat')) { ev.push({ t, type: 'sec', id: 'gat' }); playUnits([...GAT, ...GAT], 2, 112 * tempo, 'alt'); }
   if (ids.includes('toda')) {
     ev.push({ t, type: 'sec', id: 'toda' });
     const r = placeOnSam(TODA, tihai(U('2 1 -1 0'), 4), 64, gatFiller);
-    playUnits(r.units, 4, 112, 'alt'); landing = r.landing;
+    playUnits(r.units, 4, 112 * tempo, 'alt'); landing = r.landing;
   }
   if (ids.includes('drut')) {
     ev.push({ t, type: 'sec', id: 'drut' });
     const body: (string | number)[] = [];
     [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 'O', 'O', 'O-1', 'O-2', 4, 3, 2, 2, 1, 1, 0, 0, -1, 0].forEach((p) => body.push(p, 'c', 'c', 'c'));
     const r = placeOnSam(body, tihai(U('2 c c c 1 c c c 0'), 3), 64, [0, 'c', 'c', 'c']);
-    playUnits(r.units, 4, 138, 'jhala'); landing = r.landing;
+    playUnits(r.units, 4, 138 * tempo, 'jhala'); landing = r.landing;
   }
   if (landing != null) { // 最後のサムで一緒に着地
     ev.push({ t, type: 'beat', b: 0 });
@@ -249,16 +249,21 @@ class EnsembleConductor {
     this.timer = window.setInterval(pump, 25);
   }
 
-  /** 自動アンサンブル演奏 */
-  async startPerformance(raag: Raag, ids: string[], cb: EnsembleCallbacks = {}) {
+  /**
+   * 自動アンサンブル演奏。
+   * opts.tablaVel：タブラーの音量（0＝鳴らさない：自分で叩く合奏練習用）、opts.emitTabla：3Dのタブラー奏者を動かすか、
+   * opts.delay：始まるまでの秒数、opts.tempo：速さの倍率。始まる時刻と演奏の中身を返す。
+   */
+  async startPerformance(raag: Raag, ids: string[], cb: EnsembleCallbacks = {}, opts: { tablaVel?: number; emitTabla?: boolean; delay?: number; tempo?: number } = {}) {
     this.stop();
     await tablaAudio.ready();
-    const ctx = tablaAudio.getContext(); if (!ctx) return;
-    const perf = buildPerformance(raag, ids);
+    const ctx = tablaAudio.getContext(); if (!ctx) return null;
+    const { tablaVel = 1, emitTabla = true, delay = 0.4, tempo = 1 } = opts;
+    const perf = buildPerformance(raag, ids, tempo);
     // 使う音を先に用意しておく
     await new Promise<void>((r) => sitarAudio.prerender(perf.semis, r));
     this.playing = 'performance';
-    const t0 = ctx.currentTime + 0.4;
+    const t0 = ctx.currentTime + delay;
     let i = 0;
     const pump = () => {
       const ahead = ctx.currentTime + 0.25;
@@ -266,7 +271,7 @@ class EnsembleConductor {
         const e = perf.ev[i++], tt = t0 + e.t;
         if (e.type === 'note') sitarAudio.pluck(e.semi, tt, { stroke: e.stroke, meend: e.meend, vel: e.vel });
         else if (e.type === 'chik') sitarAudio.chikari(tt, e.vel);
-        else if (e.type === 'tabla') tablaAudio.scheduleBol(e.bol, tt, e.vel);
+        else if (e.type === 'tabla') { if (tablaVel > 0) tablaAudio.scheduleBol(e.bol, tt, e.vel * tablaVel, emitTabla); }
         else if (e.type === 'beat') { const bt = e.b; this.at(tt, () => cb.onBeat?.(bt)); }
         else if (e.type === 'sec') { const id = e.id; this.at(tt, () => cb.onSection?.(id)); }
         else if (e.type === 'final') this.at(tt, () => cb.onFinal?.());
@@ -278,6 +283,7 @@ class EnsembleConductor {
     };
     pump();
     this.timer = window.setInterval(pump, 25);
+    return { t0, perf };
   }
 }
 

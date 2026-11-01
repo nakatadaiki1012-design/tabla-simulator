@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Play, RotateCcw } from 'lucide-react';
 import { Drums, BolText, BOL_ROMAN, strikeDrums } from './Drums';
 import { tablaAudio } from '../../audio/tablaAudioEngine';
+import { ensemble } from '../../audio/ensemble';
+import { RAAGS } from '../../data/raags';
+import { StageMini } from '../stage/StageMini';
 import { BolKey } from '../../types/tabla';
 
 /**
@@ -15,9 +18,15 @@ const SIDE: Record<BolKey, Side> = {
 };
 const COLOR: Record<Side, string> = { B: 'bg-red-600 border-red-300', R: 'bg-sky-600 border-sky-300', L: 'bg-amber-500 border-amber-200' };
 
-interface Song { id: string; name: string; sub: string; level: number; bpm: number; beats: string[]; loops: number }
+interface Song {
+  id: string; name: string; sub: string; level: number; bpm: number; beats: string[]; loops: number;
+  /** シタールとの合奏：シタールが弾き、タブラーのパート（ティーンタールのテーカ）を自分で叩く */
+  ens?: { raag: string; ids: string[] };
+}
 // 1要素＝1拍。空白区切りで1拍を等分。「-」は休み
 const SONGS: Song[] = [
+  { id: 'e1', name: 'シタールと合奏', sub: 'ガット → ティハーイーで着地', level: 2, bpm: 112, beats: [], loops: 0, ens: { raag: 'yaman', ids: ['gat', 'toda'] } },
+  { id: 'e2', name: '合奏・終曲まで', sub: '最後は速いジャーラー', level: 3, bpm: 112, beats: [], loops: 0, ens: { raag: 'yaman', ids: ['gat', 'toda', 'drut'] } },
   { id: 'g1', name: 'はじめの一歩', sub: 'Na と Ge だけ', level: 1, bpm: 66, loops: 2, beats: ['na', 'na', 'ge', '-', 'na', 'na', 'ge', '-'] },
   { id: 'g2', name: 'ティーンタール', sub: '16拍の基本形', level: 1, bpm: 72, loops: 1,
     beats: 'dha dhin dhin dha dha dhin dhin dha dha tin tin na na dhin dhin dha'.split(' ') },
@@ -84,8 +93,8 @@ export const GameScreen: React.FC = () => {
       </div>
       <div className="grid grid-cols-2 gap-2">
         {SONGS.map((s) => (
-          <button key={s.id} onClick={() => setSong(s)} className="text-left rounded-2xl bg-stone-900 border border-stone-800 active:border-amber-500 p-3 flex flex-col gap-1">
-            <div className="font-extrabold text-stone-100">{s.name}</div>
+          <button key={s.id} onClick={() => setSong(s)} className={`text-left rounded-2xl border active:border-amber-500 p-3 flex flex-col gap-1 ${s.ens ? 'col-span-2 bg-gradient-to-r from-amber-900/60 to-stone-900 border-amber-800/70' : 'bg-stone-900 border-stone-800'}`}>
+            <div className="font-extrabold text-stone-100">{s.ens ? '🎻 ' : ''}{s.name}</div>
             <div className="text-[11px] text-stone-500">{s.sub}</div>
             <div className="flex items-center justify-between mt-1">
               <span className="flex gap-0.5">{[1, 2, 3].map((i) => <i key={i} className={`w-2 h-2 rounded-full ${i <= s.level ? 'bg-amber-500' : 'bg-stone-700'}`} />)}</span>
@@ -127,18 +136,38 @@ const Play1: React.FC<{ song: Song; slow: boolean; guide: boolean; onBack: () =>
     setHud({ score: score.current, combo: combo.current });
   };
 
-  const start = () => {
+  const [loading, setLoading] = useState(false);
+  useEffect(() => () => { if (song.ens) ensemble.stop(); }, [song]);
+  const start = async () => {
     tablaAudio.ensureContext();
     const ctx = tablaAudio.getContext()!;
+    if (song.ens) {
+      // 合奏：シタールが弾く（タブラーは自分で叩く。お手本ONなら小さく鳴る）。カウント4つのあと始まる
+      setLoading(true);
+      const raag = RAAGS.find((r) => r.id === song.ens!.raag) ?? RAAGS[0];
+      const r = await ensemble.startPerformance(raag, song.ens.ids, {}, { tablaVel: guide ? 0.22 : 0, emitTabla: false, delay: 0.5 + 4 * spb, tempo: slow ? 0.75 : 1 });
+      setLoading(false);
+      if (!r) return;
+      for (let i = 0; i < 4; i++) click(r.t0 - (4 - i) * spb, i === 0);
+      const ns: Note[] = [];
+      for (const e of r.perf.ev) if (e.type === 'tabla') ns.push({ t: r.t0 + e.t, bol: e.bol, side: SIDE[e.bol], state: null, err: 0, part: new Set() });
+      begin(ns, r.t0 + r.perf.dur + 0.3);
+      return;
+    }
     const t0 = ctx.currentTime + 0.4 + 4 * spb;
     for (let i = 0; i < 4; i++) click(t0 - (4 - i) * spb, i === 0);
-    notes.current = buildNotes(song, spb, t0);
-    if (guide) notes.current.forEach((n) => tablaAudio.scheduleBol(n.bol, n.t, 0.22));
+    const ns = buildNotes(song, spb, t0);
+    if (guide) ns.forEach((n) => tablaAudio.scheduleBol(n.bol, n.t, 0.22, false));
+    begin(ns, ns[ns.length - 1].t + 0.6);
+  };
+  const begin = (ns: Note[], end: number) => {
+    const ctx = tablaAudio.getContext()!;
+    notes.current = ns;
     combo.current = 0; maxCombo.current = 0; score.current = 0;
     setHud({ score: 0, combo: 0 }); setResult(null); setJudge(null); setPhase('play'); force((x) => x + 1);
-    const end = notes.current[notes.current.length - 1].t + 0.6;
     const loop = () => {
       const now = ctx.currentTime, w = lane.current?.clientWidth || 300, hitX = 44;
+      if (lane.current) lane.current.dataset.now = now.toFixed(3); // 動作確認用：いまの時刻
       notes.current.forEach((n, i) => {
         if (!n.state && now > n.t + 0.16) mark(n, 'miss');
         const el = els.current[i]; if (!el) return;
@@ -186,23 +215,26 @@ const Play1: React.FC<{ song: Song; slow: boolean; guide: boolean; onBack: () =>
     mark(best, e <= 0.07 ? 'great' : 'good', e);
   };
 
-  const hasBoth = song.beats.some((b) => /dha|dhin/.test(b));
+  const hasBoth = !!song.ens || song.beats.some((b) => /dha|dhin/.test(b));
   return (
     <div className="h-full flex flex-col p-3 land:p-1.5 gap-2 land:gap-1 max-w-4xl land:max-w-none mx-auto w-full relative">
       <div className="flex items-center gap-2">
-        <button onClick={() => { cancelAnimationFrame(raf.current); onBack(); }} className="w-10 h-10 rounded-full bg-stone-800 flex items-center justify-center" aria-label="もどる"><ArrowLeft className="w-5 h-5" /></button>
+        <button onClick={() => { cancelAnimationFrame(raf.current); if (song.ens) ensemble.stop(); onBack(); }} className="w-10 h-10 rounded-full bg-stone-800 flex items-center justify-center" aria-label="もどる"><ArrowLeft className="w-5 h-5" /></button>
         <b className="text-stone-100">{song.name}</b>
         <div className="ml-auto text-right leading-tight">
           <div className="text-amber-400 font-extrabold text-xl">{hud.combo > 1 ? `${hud.combo} コンボ` : ''}</div>
         </div>
       </div>
 
+      {/* 3D の演奏者（自分の叩いた音でタブラー奏者が、合奏ではシタール奏者も動く） */}
+      <div className="land:hidden flex flex-col shrink-0"><StageMini variant="inline" className={`${song.ens ? 'h-40 sm:h-48' : 'h-32 sm:h-40'} w-full`} /></div>
+
       {/* 音符が流れるレーン */}
       <div ref={lane} className="relative h-24 land:h-20 shrink-0 rounded-2xl bg-stone-900 border border-stone-800 overflow-hidden">
         <div className="absolute left-0 right-0 top-1/2 h-px bg-stone-700" />
         <div className="absolute top-1/2 -translate-y-1/2 w-16 h-16 rounded-full border-4 border-white/70" style={{ left: 44 - 32 }} />
         {notes.current.map((n, i) => (
-          <div key={i} ref={(el) => { els.current[i] = el; }} className={`absolute top-1/2 left-0 -ml-7 w-14 h-14 rounded-full border-2 text-white font-extrabold text-xs flex items-center justify-center shadow-lg ${COLOR[n.side]}`} style={{ transform: 'translate(-100px,-50%)', opacity: 0, willChange: 'transform' }}>
+          <div key={i} ref={(el) => { els.current[i] = el; }} data-t={n.t.toFixed(3)} data-bol={n.bol} className={`absolute top-1/2 left-0 -ml-7 w-14 h-14 rounded-full border-2 text-white font-extrabold text-xs flex items-center justify-center shadow-lg ${COLOR[n.side]}`} style={{ transform: 'translate(-100px,-50%)', opacity: 0, willChange: 'transform' }}>
             {BOL_ROMAN[n.bol]}
           </div>
         ))}
@@ -213,8 +245,8 @@ const Play1: React.FC<{ song: Song; slow: boolean; guide: boolean; onBack: () =>
       <div className="flex-1 min-h-0 relative">
         <Drums onHit={onHit} target={next ? [next] : []} />
         {phase === 'ready' && (
-          <button onClick={start} className="absolute inset-0 m-auto w-40 h-40 rounded-full bg-amber-600/95 text-white font-extrabold text-2xl shadow-2xl flex flex-col items-center justify-center gap-1">
-            <Play className="w-8 h-8" />スタート
+          <button onClick={start} disabled={loading} className="absolute inset-0 m-auto w-40 h-40 rounded-full bg-amber-600/95 text-white font-extrabold text-2xl shadow-2xl flex flex-col items-center justify-center gap-1 disabled:opacity-70">
+            <Play className="w-8 h-8" />{loading ? '準備中…' : 'スタート'}
           </button>
         )}
       </div>

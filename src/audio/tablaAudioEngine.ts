@@ -1184,9 +1184,9 @@ class TablaAudioEngine {
   public onStrike(f: (e: { bol: BolKey; time: number }) => void) { this.strikeListeners.add(f); return () => { this.strikeListeners.delete(f); }; }
   private emitStrike(bol: BolKey, time: number) { this.strikeListeners.forEach((f) => { try { f({ bol, time }); } catch { /* noop */ } }); }
 
-  public scheduleBol(bol: BolKey, when: number, intensity: number = 1.0) {
+  public scheduleBol(bol: BolKey, when: number, intensity: number = 1.0, emit = true) {
     if (!this.ensureContext()) return;
-    this.emitStrike(bol, when);
+    if (emit) this.emitStrike(bol, when);
     this.scheduleBolSilently(bol, when, intensity);
   }
   private scheduleBolSilently(bol: BolKey, when: number, intensity: number = 1.0) {
