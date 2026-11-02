@@ -382,7 +382,8 @@ export default function Stage3D({ className }: { className?: string }) {
     const neckPt = (u: number, out: number, side = 0) => { const p = V(side, u * st.len, 0.03 + out); st.neck.localToWorld(p); return S.g.worldToLocal(p); };
     const semiToU = (semi: number) => 0.2 + Math.max(0, Math.min(1, (semi + 7) / 31)) * 0.62;
 
-    const resize = () => { const w = el.clientWidth || 1, h = el.clientHeight || 1; renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); };
+    let dist = 2.55;
+    const resize = () => { const w = el.clientWidth || 1, h = el.clientHeight || 1; renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); dist = 2.55 * Math.max(1, 1.75 / cam.aspect); }; // たて長の窓ではカメラを引いて2人とも入れる
     const ro = new ResizeObserver(resize); ro.observe(el); resize();
 
     // ドラッグで見る向きを変える
@@ -405,7 +406,7 @@ export default function Stage3D({ className }: { className?: string }) {
       if (document.hidden) return;
       const t = now(), clk = (performance.now() - t0) / 1000;
       const a = az + Math.sin(clk * 0.12) * 0.12;
-      cam.position.set(Math.sin(a) * 2.55, 0.95, Math.cos(a) * 2.55 + 0.1); cam.lookAt(0, 0.4, 0.05);
+      cam.position.set(Math.sin(a) * dist, 0.95 + (dist - 2.55) * 0.25, Math.cos(a) * dist + 0.1); cam.lookAt(0, 0.4, 0.05);
 
       // ---- タブラー奏者 ----
       const pick = (side: 'R' | 'L') => {

@@ -189,7 +189,7 @@ class SitarEngine {
   now() { const c = this.ctx(); return c ? c.currentTime : 0; }
 
   /** 主弦を弾く。when 省略で今すぐ */
-  pluck(semi: number, when?: number, opts: { stroke?: SitarStroke; meend?: Meend[] | null; vel?: number } = {}) {
+  pluck(semi: number, when?: number, opts: { stroke?: SitarStroke; meend?: Meend[] | null; vel?: number; emit?: boolean } = {}) {
     if (!this.ensureBus()) return null;
     const ctx = this.ctx()!;
     const t = Math.max(when ?? ctx.currentTime + 0.005, ctx.currentTime);
@@ -219,7 +219,7 @@ class SitarEngine {
       if (tb) this.play(tb, t + d, this.tBus!, 0.5 * (opts.vel ?? 1));
       this.emit({ type: 'taraf', index: i, time: t + d });
     });
-    this.emit({ type: 'note', semi, stroke, meend: opts.meend, time: t });
+    if (opts.emit !== false) this.emit({ type: 'note', semi, stroke, meend: opts.meend, time: t });
     return voice.src;
   }
 

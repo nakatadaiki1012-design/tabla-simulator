@@ -4,7 +4,7 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { ArrowLeft, GraduationCap, Headphones, Menu, Music2, Drum } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Headphones, Menu, Music2, Drum, Users } from 'lucide-react';
 import { LessonScreen } from './components/simple/LessonScreen';
 import { PlayScreen } from './components/simple/PlayScreen';
 import { ListenScreen } from './components/simple/ListenScreen';
@@ -14,6 +14,7 @@ import { AutoPlayer } from './components/AutoPlayer';
 import { LearningHub } from './components/LearningHub';
 import { KeyboardGuideModal } from './components/KeyboardGuideModal';
 import { GameScreen } from './components/simple/GameScreen';
+import { EnsembleScreen } from './components/simple/EnsembleScreen';
 import { TaalPlayer } from './components/TaalPlayer';
 import { AcousticLab } from './components/AcousticLab';
 import { TheoryGuide } from './components/TheoryGuide';
@@ -21,10 +22,11 @@ import { AnatomyAndTechnique } from './components/AnatomyAndTechnique';
 import { ClassroomGuide } from './components/ClassroomGuide';
 import { BolKey } from './types/tabla';
 
-type Tab = 'lesson' | 'play' | 'listen' | 'sitar' | 'more' | 'game' | 'old-play' | 'old-auto' | 'old-learn' | 'old-taal' | 'old-lab' | 'old-theory' | 'old-anatomy' | 'old-teacher';
+type Tab = 'lesson' | 'play' | 'listen' | 'sitar' | 'more' | 'game' | 'ensemble' | 'old-play' | 'old-auto' | 'old-learn' | 'old-taal' | 'old-lab' | 'old-theory' | 'old-anatomy' | 'old-teacher';
 
 const NAV: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'play', label: 'たたく', icon: <Drum className="w-6 h-6" /> },
+  { id: 'ensemble', label: '合奏', icon: <Users className="w-6 h-6" /> },
   { id: 'lesson', label: 'レッスン', icon: <GraduationCap className="w-6 h-6" /> },
   { id: 'listen', label: 'きく', icon: <Headphones className="w-6 h-6" /> },
   { id: 'sitar', label: 'シタール', icon: <Music2 className="w-6 h-6" /> },
@@ -67,6 +69,7 @@ export default function App() {
         {tab === 'listen' && <ListenScreen />}
         {tab === 'sitar' && <SitarPanel />}
         {tab === 'game' && <GameScreen />}
+        {tab === 'ensemble' && <EnsembleScreen />}
         {tab === 'more' && (
           <div className="h-full flex flex-col gap-2 p-4 max-w-md mx-auto w-full">
             <button onClick={() => setTab('game')} className="text-left rounded-2xl bg-amber-700/90 px-4 py-3 shadow-lg">
@@ -102,7 +105,7 @@ export default function App() {
       </main>
 
       {/* 下：大きなタブ（スマホ・タブレット） */}
-      <nav className="md:hidden land:hidden shrink-0 grid grid-cols-5 border-t border-stone-800 bg-stone-950 pb-[env(safe-area-inset-bottom)]">
+      <nav className="md:hidden land:hidden shrink-0 grid grid-cols-6 border-t border-stone-800 bg-stone-950 pb-[env(safe-area-inset-bottom)]">
         {NAV.map((n) => (
           <button key={n.id} onClick={() => setTab(n.id)} className={`flex flex-col items-center justify-center gap-0.5 py-2 ${navTab === n.id ? 'text-amber-400' : 'text-stone-500'}`}>
             {n.icon}<span className="text-[10px] font-bold">{n.label}</span>
